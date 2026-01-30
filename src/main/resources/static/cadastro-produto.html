@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cadastro de Produto – Artilheiro Store</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: system-ui, sans-serif; max-width: 480px; margin: 2rem auto; padding: 0 1rem; }
+    h1 { font-size: 1.25rem; margin-bottom: 1.5rem; }
+    label { display: block; margin-top: 0.75rem; font-weight: 500; }
+    input[type="text"], input[type="number"], textarea { width: 100%; padding: 0.5rem; margin-top: 0.25rem; }
+    input[type="file"] { margin-top: 0.25rem; }
+    .hint { font-size: 0.8rem; color: #666; margin-top: 0.2rem; }
+    button { margin-top: 1.5rem; padding: 0.6rem 1.2rem; background: #222; color: #fff; border: none; cursor: pointer; }
+    button:disabled { opacity: 0.6; cursor: not-allowed; }
+    .msg { margin-top: 1rem; padding: 0.75rem; border-radius: 4px; }
+    .msg.success { background: #e8f5e9; color: #2e7d32; }
+    .msg.error { background: #ffebee; color: #c62828; }
+  </style>
+</head>
+<body>
+  <h1>Cadastro de Produto</h1>
+  <form id="form">
+    <label for="name">Nome *</label>
+    <input type="text" id="name" name="name" required placeholder="Ex: Camisa Flamengo 24/25">
+
+    <label for="team">Time *</label>
+    <input type="text" id="team" name="team" required placeholder="Ex: Flamengo">
+
+    <label for="liga">Liga *</label>
+    <input type="text" id="liga" name="liga" required placeholder="Ex: Brasileirão">
+
+    <label for="category">Categoria *</label>
+    <input type="text" id="category" name="category" required placeholder="Ex: Camisa">
+
+    <label for="price">Preço *</label>
+    <input type="number" id="price" name="price" step="0.01" min="0.01" required placeholder="Ex: 199.90">
+
+    <label for="sizes">Tamanhos (formato: P:5, M:10, G:8, GG:3) *</label>
+    <input type="text" id="sizes" name="sizes" required placeholder="P:5, M:10, G:8, GG:3">
+    <p class="hint">Tamanho seguido de dois pontos e quantidade, separados por vírgula.</p>
+
+    <label>
+      <input type="checkbox" id="active" name="active" checked> Ativo
+    </label>
+
+    <label for="images">Imagens (opcional)</label>
+    <input type="file" id="images" name="images" accept="image/jpeg,image/png,image/webp" multiple>
+    <p class="hint">JPEG, PNG ou WebP. Até 5 MB por arquivo.</p>
+
+    <button type="submit" id="btn">Cadastrar</button>
+  </form>
+  <div id="msg"></div>
+
+  <script>
+    const form = document.getElementById('form');
+    const btn = document.getElementById('btn');
+    const msgEl = document.getElementById('msg');
+
+    function showMsg(text, isError) {
+      msgEl.textContent = text;
+      msgEl.className = 'msg ' + (isError ? 'error' : 'success');
+    }
+
+    function parseSizes(str) {
+      const out = {};
+      if (!str || !str.trim()) return out;
+      str.split(',').forEach(pair => {
+        const parts = pair.trim().split(':').map(s => s.trim());
+        const size = parts[0];
+        const qty = parts[1] !== undefined ? parseInt(parts[1], 10) : 0;
+        if (size) out[size] = isNaN(qty) ? 0 : qty;
+      });
+      return out;
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      msgEl.textContent = '';
+      btn.disabled = true;
+
+      const priceVal = document.getElementById('price').value.replace(',', '.');
+      const price = parseFloat(priceVal);
+      if (isNaN(price) || price <= 0) {
+        showMsg('Preço inválido.', true);
+        btn.disabled = false;
+        return;
+      }
+
+      const sizesStr = document.getElementById('sizes').value.trim();
+      const sizes = parseSizes(sizesStr);
+      if (Object.keys(sizes).length === 0) {
+        showMsg('Informe ao menos um tamanho (ex: P:5, M:10).', true);
+        btn.disabled = false;
+        return;
+      }
+
+      const product = {
+        name: document.getElementById('name').value.trim(),
+        team: document.getElementById('team').value.trim(),
+        liga: document.getElementById('liga').value.trim(),
+        category: document.getElementById('category').value.trim(),
+        price: price,
+        sizes: sizes,
+        active: document.getElementById('active').checked
+      };
+
+      const formData = new FormData();
+      const productBlob = new Blob([JSON.stringify(product)], { type: 'application/json' });
+      formData.append('product', productBlob, 'product.json');
+
+      const files = document.getElementById('images').files;
+      for (let i = 0; i < files.length; i++) {
+        formData.append('images', files[i], files[i].name);
+      }
+
+      try {
+        const res = await fetch('/api/products', {
+          method: 'POST',
+          body: formData
+        });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok) {
+          showMsg('Produto cadastrado com sucesso. ID: ' + data.id);
+          form.reset();
+        } else {
+          const msg = data.message || data.error || (Array.isArray(data.errors) ? data.errors.map(e => e.defaultMessage || e).join(', ') : null) || ('Erro ' + res.status);
+          showMsg(msg, true);
+        }
+      } catch (err) {
+        showMsg('Erro de rede: ' + err.message, true);
+      } finally {
+        btn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

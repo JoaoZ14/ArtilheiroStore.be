@@ -1,5 +1,5 @@
-# Estágio 1: build
-FROM eclipse-temurin:17-jdk-alpine AS build
+# Estágio 1: build (imagem com Maven + JDK 17)
+FROM maven:3.9-eclipse-temurin-17-alpine AS build
 WORKDIR /app
 
 # Copiar POM e baixar dependências (cache de camadas)

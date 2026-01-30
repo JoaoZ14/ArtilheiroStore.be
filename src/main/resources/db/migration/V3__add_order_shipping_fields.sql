@@ -1,0 +1,5 @@
+ALTER TABLE orders
+    ADD COLUMN shipped_at TIMESTAMP NULL,
+    ADD COLUMN carrier VARCHAR(255) NULL,
+    ADD COLUMN tracking_code VARCHAR(100) NULL,
+    ADD COLUMN tracking_url VARCHAR(500) NULL;

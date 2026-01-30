@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
@@ -46,6 +47,14 @@ public class ProductController {
     }
 
     /**
+     * Lista todos os produtos, inclusive inativos (admin).
+     */
+    @GetMapping("/admin")
+    public List<ProductResponse> listAllForAdmin() {
+        return productService.findAllForAdmin();
+    }
+
+    /**
      * Cadastra um novo produto e envia as imagens para o bucket Supabase (CamisaImages).
      * Request: multipart/form-data com part "product" (JSON) e part "images" (arquivos).
      */
@@ -55,5 +64,18 @@ public class ProductController {
             @RequestPart(value = "images", required = false) List<MultipartFile> images) throws IOException {
         ProductResponse created = productService.create(product, images);
         return ResponseEntity.status(201).body(created);
+    }
+
+    /**
+     * Atualiza um produto existente (admin). Novas imagens substituem as atuais se enviadas.
+     */
+    @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ProductResponse> update(
+            @PathVariable UUID id,
+            @Valid @RequestPart("product") ProductRequest product,
+            @RequestPart(value = "images", required = false) List<MultipartFile> images) throws IOException {
+        return productService.update(id, product, images)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 }

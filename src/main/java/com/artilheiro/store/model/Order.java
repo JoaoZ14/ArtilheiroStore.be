@@ -52,8 +52,26 @@ public class Order {
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
+    @Column(name = "shipped_at")
+    private LocalDateTime shippedAt;
+
+    @Column(length = 255)
+    private String carrier;
+
+    @Column(name = "tracking_code", length = 100)
+    private String trackingCode;
+
+    @Column(name = "tracking_url", length = 500)
+    private String trackingUrl;
+
     public enum OrderStatus {
-        RECEIVED
+        RECEIVED,
+        CONFIRMED,
+        PREPARING,
+        SHIPPED,
+        IN_TRANSIT,
+        DELIVERED,
+        CANCELLED
     }
 
     public Order() {
@@ -137,5 +155,37 @@ public class Order {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public LocalDateTime getShippedAt() {
+        return shippedAt;
+    }
+
+    public void setShippedAt(LocalDateTime shippedAt) {
+        this.shippedAt = shippedAt;
+    }
+
+    public String getCarrier() {
+        return carrier;
+    }
+
+    public void setCarrier(String carrier) {
+        this.carrier = carrier;
+    }
+
+    public String getTrackingCode() {
+        return trackingCode;
+    }
+
+    public void setTrackingCode(String trackingCode) {
+        this.trackingCode = trackingCode;
+    }
+
+    public String getTrackingUrl() {
+        return trackingUrl;
+    }
+
+    public void setTrackingUrl(String trackingUrl) {
+        this.trackingUrl = trackingUrl;
     }
 }

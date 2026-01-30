@@ -60,8 +60,53 @@ public class ProductService {
 
     public Optional<ProductResponse> findById(UUID id) {
         return productRepository.findById(id)
-            .filter(Product::getActive)
-            .map(this::toResponse);
+                .filter(Product::getActive)
+                .map(this::toResponse);
+    }
+
+    /**
+     * Lista todos os produtos, inclusive inativos (admin).
+     */
+    public List<ProductResponse> findAllForAdmin() {
+        return productRepository.findAll().stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
+    /**
+     * Atualiza um produto existente (admin). Novas imagens substituem as atuais se enviadas.
+     */
+    public Optional<ProductResponse> update(UUID id, ProductRequest request, List<MultipartFile> images) throws IOException {
+        return productRepository.findById(id)
+                .map(product -> {
+                    product.setName(request.getName());
+                    product.setTeam(request.getTeam());
+                    product.setLiga(request.getLiga());
+                    product.setCategory(request.getCategory());
+                    product.setPrice(request.getPrice());
+                    product.setSizes(request.getSizes());
+                    product.setActive(request.getActive() != null ? request.getActive() : true);
+
+                    if (images != null && !images.isEmpty()) {
+                        List<String> imageUrls = new ArrayList<>();
+                        for (MultipartFile file : images) {
+                            if (file == null || file.isEmpty()) continue;
+                            try {
+                                String path = supabaseStorageService.buildProductImagePath(product.getId(), file);
+                                String publicUrl = supabaseStorageService.upload(file, path);
+                                imageUrls.add(publicUrl);
+                            } catch (IOException e) {
+                                throw new RuntimeException("Erro ao enviar imagem: " + e.getMessage());
+                            }
+                        }
+                        if (!imageUrls.isEmpty()) {
+                            product.setImages(imageUrls);
+                        }
+                    }
+
+                    productRepository.save(product);
+                    return toResponse(product);
+                });
     }
 
     /**

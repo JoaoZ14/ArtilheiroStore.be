@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin – Artilheiro Store</title>
+  <style>
+    * { box-sizing: border-box; }
+    :root {
+      --bg: #0f0f12;
+      --surface: #1a1a1f;
+      --border: #2d2d35;
+      --text: #e8e8ed;
+      --muted: #8b8b96;
+      --accent: #c9a227;
+      --accent-hover: #d4b03a;
+      --danger: #c62828;
+      --success: #2e7d32;
+    }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; background: var(--bg); color: var(--text); min-height: 100vh; }
+    .layout { display: flex; flex-direction: column; min-height: 100vh; max-width: 1200px; margin: 0 auto; padding: 0 1rem; }
+    header { display: flex; align-items: center; gap: 1rem; padding: 1rem 0; border-bottom: 1px solid var(--border); }
+    header h1 { font-size: 1.25rem; font-weight: 600; margin: 0; color: var(--accent); }
+    .tabs { display: flex; gap: 0.25rem; margin-bottom: 1.5rem; }
+    .tabs button { padding: 0.5rem 1rem; background: var(--surface); border: 1px solid var(--border); color: var(--text); cursor: pointer; border-radius: 6px; font-size: 0.9rem; }
+    .tabs button:hover { background: var(--border); }
+    .tabs button.active { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+    .panel { display: none; }
+    .panel.active { display: block; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    th, td { text-align: left; padding: 0.75rem; border-bottom: 1px solid var(--border); }
+    th { color: var(--muted); font-weight: 500; }
+    tr:hover { background: var(--surface); }
+    .btn { padding: 0.5rem 1rem; border: none; border-radius: 6px; cursor: pointer; font-size: 0.875rem; }
+    .btn-primary { background: var(--accent); color: var(--bg); }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-secondary { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+    .btn-secondary:hover { background: var(--border); }
+    .btn-sm { padding: 0.35rem 0.65rem; font-size: 0.8rem; }
+    label { display: block; margin-top: 0.75rem; font-weight: 500; color: var(--muted); font-size: 0.875rem; }
+    input[type="text"], input[type="number"], input[type="datetime-local"], textarea, select {
+      width: 100%; padding: 0.5rem; margin-top: 0.25rem; background: var(--surface); border: 1px solid var(--border);
+      color: var(--text); border-radius: 6px;
+    }
+    input[type="file"] { margin-top: 0.25rem; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    @media (max-width: 640px) { .form-row { grid-template-columns: 1fr; } }
+    .msg { margin-top: 1rem; padding: 0.75rem; border-radius: 6px; font-size: 0.9rem; }
+    .msg.success { background: rgba(46,125,50,0.2); color: #81c784; }
+    .msg.error { background: rgba(198,40,40,0.2); color: #e57373; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin-bottom: 1rem; }
+    .card h2 { margin: 0 0 1rem; font-size: 1.1rem; }
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 100; padding: 1rem; }
+    .modal-overlay.open { display: flex; }
+    .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; max-width: 480px; width: 100%; max-height: 90vh; overflow-y: auto; }
+    .modal h3 { margin: 0 0 1rem; font-size: 1.1rem; }
+    .modal-actions { display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1.25rem; }
+    .badge { display: inline-block; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 500; }
+    .badge-received { background: #37474f; color: #b0bec5; }
+    .badge-confirmed { background: #1565c0; color: #90caf9; }
+    .badge-preparing { background: #6a1b9a; color: #ce93d8; }
+    .badge-shipped, .badge-in_transit { background: #f57c00; color: #ffe0b2; }
+    .badge-delivered { background: #2e7d32; color: #a5d6a7; }
+    .badge-cancelled { background: #c62828; color: #ef9a9a; }
+    .empty { color: var(--muted); padding: 2rem; text-align: center; }
+    a.link { color: var(--accent); text-decoration: none; }
+    a.link:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <header>
+      <h1>Artilheiro Store – Admin</h1>
+    </header>
+
+    <div class="tabs">
+      <button type="button" class="tab-btn active" data-panel="produtos">Produtos</button>
+      <button type="button" class="tab-btn" data-panel="pedidos">Pedidos</button>
+    </div>
+
+    <div id="panel-produtos" class="panel active">
+      <div class="card">
+        <h2>Produtos</h2>
+        <button type="button" class="btn btn-primary" id="btn-novo-produto">Novo produto</button>
+        <div id="produtos-list" style="margin-top: 1rem;"></div>
+      </div>
+      <div class="card" id="card-form-produto" style="display: none;">
+        <h2 id="form-produto-title">Cadastrar produto</h2>
+        <form id="form-produto">
+          <input type="hidden" id="produto-id" name="id" />
+          <div class="form-row">
+            <div>
+              <label for="name">Nome *</label>
+              <input type="text" id="name" name="name" required placeholder="Ex: Camisa Flamengo 24/25" />
+            </div>
+            <div>
+              <label for="team">Time *</label>
+              <input type="text" id="team" name="team" required placeholder="Ex: Flamengo" />
+            </div>
+          </div>
+          <div class="form-row">
+            <div>
+              <label for="liga">Liga *</label>
+              <input type="text" id="liga" name="liga" required placeholder="Ex: Brasileirão" />
+            </div>
+            <div>
+              <label for="category">Categoria *</label>
+              <input type="text" id="category" name="category" required placeholder="Ex: Camisa" />
+            </div>
+          </div>
+          <div class="form-row">
+            <div>
+              <label for="price">Preço *</label>
+              <input type="number" id="price" name="price" step="0.01" min="0.01" required placeholder="199.90" />
+            </div>
+            <div>
+              <label for="sizes">Tamanhos (P:5, M:10, G:8) *</label>
+              <input type="text" id="sizes" name="sizes" required placeholder="P:5, M:10, G:8, GG:3" />
+            </div>
+          </div>
+          <label><input type="checkbox" id="active" name="active" checked /> Ativo</label>
+          <label for="images">Imagens (opcional; ao editar, substituem as atuais)</label>
+          <input type="file" id="images" name="images" accept="image/jpeg,image/png,image/webp" multiple />
+          <div style="margin-top: 1rem;">
+            <button type="submit" class="btn btn-primary" id="btn-submit-produto">Salvar</button>
+            <button type="button" class="btn btn-secondary" id="btn-cancel-produto">Cancelar</button>
+          </div>
+        </form>
+        <div id="msg-produto"></div>
+      </div>
+    </div>
+
+    <div id="panel-pedidos" class="panel">
+      <div class="card">
+        <h2>Pedidos</h2>
+        <div id="pedidos-list"></div>
+      </div>
+    </div>
+
+    <div id="modal-pedido" class="modal-overlay">
+      <div class="modal">
+        <h3>Gerir pedido <span id="modal-pedido-codigo"></span></h3>
+        <form id="form-pedido">
+          <input type="hidden" id="pedido-id" />
+          <label for="pedido-status">Status</label>
+          <select id="pedido-status" name="status">
+            <option value="RECEIVED">Recebido</option>
+            <option value="CONFIRMED">Confirmado</option>
+            <option value="PREPARING">Em preparação</option>
+            <option value="SHIPPED">Enviado</option>
+            <option value="IN_TRANSIT">Em trânsito</option>
+            <option value="DELIVERED">Entregue</option>
+            <option value="CANCELLED">Cancelado</option>
+          </select>
+          <label for="pedido-shippedAt">Data de envio</label>
+          <input type="datetime-local" id="pedido-shippedAt" name="shippedAt" />
+          <label for="pedido-carrier">Transportadora</label>
+          <input type="text" id="pedido-carrier" name="carrier" placeholder="Ex: Correios, Jadlog" />
+          <label for="pedido-trackingCode">Código de rastreio</label>
+          <input type="text" id="pedido-trackingCode" name="trackingCode" placeholder="Ex: BR123456789" />
+          <label for="pedido-trackingUrl">Link de rastreio</label>
+          <input type="text" id="pedido-trackingUrl" name="trackingUrl" placeholder="https://..." />
+          <div class="modal-actions">
+            <button type="button" class="btn btn-secondary" id="btn-fechar-pedido">Fechar</button>
+            <button type="submit" class="btn btn-primary">Salvar alterações</button>
+          </div>
+        </form>
+        <div id="msg-pedido"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_PRODUCTS = '/api/products';
+    const API_ORDERS = '/api/orders';
+
+    function parseSizes(str) {
+      const out = {};
+      if (!str || !str.trim()) return out;
+      str.split(',').forEach(pair => {
+        const parts = pair.trim().split(':').map(s => s.trim());
+        const size = parts[0];
+        const qty = parts[1] !== undefined ? parseInt(parts[1], 10) : 0;
+        if (size) out[size] = isNaN(qty) ? 0 : qty;
+      });
+      return out;
+    }
+
+    function sizesToString(sizes) {
+      if (!sizes || typeof sizes !== 'object') return '';
+      return Object.entries(sizes).map(([s, q]) => s + ':' + q).join(', ');
+    }
+
+    // ---- Tabs ----
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('panel-' + btn.dataset.panel).classList.add('active');
+        if (btn.dataset.panel === 'pedidos') loadPedidos();
+      });
+    });
+
+    // ---- Produtos ----
+    async function loadProdutos() {
+      const res = await fetch(API_PRODUCTS + '/admin');
+      const list = await res.json();
+      const el = document.getElementById('produtos-list');
+      if (!list.length) {
+        el.innerHTML = '<p class="empty">Nenhum produto cadastrado.</p>';
+        return;
+      }
+      el.innerHTML = `
+        <table>
+          <thead><tr><th>Nome</th><th>Time</th><th>Categoria</th><th>Preço</th><th>Ativo</th><th></th></tr></thead>
+          <tbody>
+            ${list.map(p => `
+              <tr>
+                <td>${escapeHtml(p.name)}</td>
+                <td>${escapeHtml(p.team)}</td>
+                <td>${escapeHtml(p.category)}</td>
+                <td>R$ ${Number(p.price).toFixed(2).replace('.', ',')}</td>
+                <td>${p.active ? 'Sim' : 'Não'}</td>
+                <td><button type="button" class="btn btn-secondary btn-sm btn-edit-produto" data-id="${p.id}">Editar</button></td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+      el.querySelectorAll('.btn-edit-produto').forEach(b => {
+        b.addEventListener('click', () => openEditProduto(list.find(p => p.id === b.dataset.id)));
+      });
+    }
+
+    function escapeHtml(s) {
+      if (s == null) return '';
+      const div = document.createElement('div');
+      div.textContent = s;
+      return div.innerHTML;
+    }
+
+    function openEditProduto(p) {
+      document.getElementById('form-produto-title').textContent = 'Editar produto';
+      document.getElementById('produto-id').value = p.id;
+      document.getElementById('name').value = p.name;
+      document.getElementById('team').value = p.team;
+      document.getElementById('liga').value = p.liga;
+      document.getElementById('category').value = p.category;
+      document.getElementById('price').value = p.price;
+      document.getElementById('sizes').value = sizesToString(p.sizes);
+      document.getElementById('active').checked = p.active;
+      document.getElementById('images').value = '';
+      document.getElementById('card-form-produto').style.display = 'block';
+      document.getElementById('msg-produto').textContent = '';
+    }
+
+    document.getElementById('btn-novo-produto').addEventListener('click', () => {
+      document.getElementById('form-produto-title').textContent = 'Cadastrar produto';
+      document.getElementById('form-produto').reset();
+      document.getElementById('produto-id').value = '';
+      document.getElementById('active').checked = true;
+      document.getElementById('card-form-produto').style.display = 'block';
+      document.getElementById('msg-produto').textContent = '';
+    });
+
+    document.getElementById('btn-cancel-produto').addEventListener('click', () => {
+      document.getElementById('card-form-produto').style.display = 'none';
+    });
+
+    document.getElementById('form-produto').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const msgEl = document.getElementById('msg-produto');
+      const btn = document.getElementById('btn-submit-produto');
+      const id = document.getElementById('produto-id').value;
+      const priceVal = document.getElementById('price').value.replace(',', '.');
+      const price = parseFloat(priceVal);
+      if (isNaN(price) || price <= 0) {
+        msgEl.textContent = 'Preço inválido.';
+        msgEl.className = 'msg error';
+        return;
+      }
+      const sizes = parseSizes(document.getElementById('sizes').value.trim());
+      if (Object.keys(sizes).length === 0) {
+        msgEl.textContent = 'Informe ao menos um tamanho (ex: P:5, M:10).';
+        msgEl.className = 'msg error';
+        return;
+      }
+      const product = {
+        name: document.getElementById('name').value.trim(),
+        team: document.getElementById('team').value.trim(),
+        liga: document.getElementById('liga').value.trim(),
+        category: document.getElementById('category').value.trim(),
+        price,
+        sizes,
+        active: document.getElementById('active').checked
+      };
+      btn.disabled = true;
+      msgEl.textContent = '';
+      try {
+        const files = document.getElementById('images').files;
+        if (id) {
+          const formData = new FormData();
+          formData.append('product', new Blob([JSON.stringify(product)], { type: 'application/json' }), 'product.json');
+          for (let i = 0; i < files.length; i++) formData.append('images', files[i], files[i].name);
+          const res = await fetch(API_PRODUCTS + '/' + id, { method: 'PUT', body: formData });
+          if (res.ok) {
+            msgEl.textContent = 'Produto atualizado com sucesso.';
+            msgEl.className = 'msg success';
+            loadProdutos();
+            document.getElementById('card-form-produto').style.display = 'none';
+          } else {
+            const data = await res.json().catch(() => ({}));
+            msgEl.textContent = data.message || 'Erro ' + res.status;
+            msgEl.className = 'msg error';
+          }
+        } else {
+          const formData = new FormData();
+          formData.append('product', new Blob([JSON.stringify(product)], { type: 'application/json' }), 'product.json');
+          for (let i = 0; i < files.length; i++) formData.append('images', files[i], files[i].name);
+          const res = await fetch(API_PRODUCTS, { method: 'POST', body: formData });
+          const data = await res.json().catch(() => ({}));
+          if (res.ok) {
+            msgEl.textContent = 'Produto cadastrado com sucesso.';
+            msgEl.className = 'msg success';
+            document.getElementById('form-produto').reset();
+            loadProdutos();
+          } else {
+            msgEl.textContent = data.message || 'Erro ' + res.status;
+            msgEl.className = 'msg error';
+          }
+        }
+      } catch (err) {
+        msgEl.textContent = 'Erro de rede: ' + err.message;
+        msgEl.className = 'msg error';
+      }
+      btn.disabled = false;
+    });
+
+    // ---- Pedidos ----
+    async function loadPedidos() {
+      const res = await fetch(API_ORDERS + '/admin');
+      const list = await res.json();
+      const el = document.getElementById('pedidos-list');
+      if (!list.length) {
+        el.innerHTML = '<p class="empty">Nenhum pedido.</p>';
+        return;
+      }
+      el.innerHTML = `
+        <table>
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Total</th>
+              <th>Status</th>
+              <th>Data</th>
+              <th>Enviado em</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            ${list.map(o => `
+              <tr>
+                <td>${escapeHtml(o.orderCode)}</td>
+                <td>R$ ${Number(o.total).toFixed(2).replace('.', ',')}</td>
+                <td><span class="badge badge-${(o.status || '').toLowerCase()}">${escapeHtml(o.status)}</span></td>
+                <td>${o.createdAt || '-'}</td>
+                <td>${o.shippedAt ? formatDateTime(o.shippedAt) : '-'}</td>
+                <td><button type="button" class="btn btn-secondary btn-sm btn-gerir-pedido" data-id="${o.id}">Gerir</button></td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+      el.querySelectorAll('.btn-gerir-pedido').forEach(b => {
+        b.addEventListener('click', () => openModalPedido(list.find(o => o.id === b.dataset.id)));
+      });
+    }
+
+    function formatDateTime(s) {
+      if (!s) return '-';
+      try {
+        const d = new Date(s);
+        return isNaN(d.getTime()) ? s : d.toLocaleString('pt-BR');
+      } catch (_) { return s; }
+    }
+
+    function openModalPedido(o) {
+      document.getElementById('modal-pedido-codigo').textContent = o.orderCode;
+      document.getElementById('pedido-id').value = o.id;
+      document.getElementById('pedido-status').value = o.status || 'RECEIVED';
+      document.getElementById('pedido-shippedAt').value = o.shippedAt ? o.shippedAt.slice(0, 16) : '';
+      document.getElementById('pedido-carrier').value = o.carrier || '';
+      document.getElementById('pedido-trackingCode').value = o.trackingCode || '';
+      document.getElementById('pedido-trackingUrl').value = o.trackingUrl || '';
+      document.getElementById('msg-pedido').textContent = '';
+      document.getElementById('modal-pedido').classList.add('open');
+    }
+
+    document.getElementById('btn-fechar-pedido').addEventListener('click', () => {
+      document.getElementById('modal-pedido').classList.remove('open');
+    });
+
+    document.getElementById('modal-pedido').addEventListener('click', (e) => {
+      if (e.target.id === 'modal-pedido') e.target.classList.remove('open');
+    });
+
+    document.getElementById('form-pedido').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = document.getElementById('pedido-id').value;
+      const msgEl = document.getElementById('msg-pedido');
+      const shippedAt = document.getElementById('pedido-shippedAt').value;
+      const payload = {
+        status: document.getElementById('pedido-status').value,
+        shippedAt: shippedAt ? shippedAt + ':00' : null,
+        carrier: document.getElementById('pedido-carrier').value.trim() || null,
+        trackingCode: document.getElementById('pedido-trackingCode').value.trim() || null,
+        trackingUrl: document.getElementById('pedido-trackingUrl').value.trim() || null
+      };
+      try {
+        const res = await fetch(API_ORDERS + '/' + id, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+          msgEl.textContent = 'Pedido atualizado.';
+          msgEl.className = 'msg success';
+          loadPedidos();
+          setTimeout(() => document.getElementById('modal-pedido').classList.remove('open'), 800);
+        } else {
+          const data = await res.json().catch(() => ({}));
+          msgEl.textContent = data.message || 'Erro ' + res.status;
+          msgEl.className = 'msg error';
+        }
+      } catch (err) {
+        msgEl.textContent = 'Erro de rede: ' + err.message;
+        msgEl.className = 'msg error';
+      }
+    });
+
+    loadProdutos();
+  </script>
+</body>
+</html>

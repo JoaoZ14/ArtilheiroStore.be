@@ -2,167 +2,352 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0f0f12">
   <title>Admin – Artilheiro Store</title>
   <style>
-    * { box-sizing: border-box; }
+    *, *::before, *::after { box-sizing: border-box; }
     :root {
       --bg: #0f0f12;
       --surface: #1a1a1f;
+      --surface-2: #222228;
       --border: #2d2d35;
       --text: #e8e8ed;
-      --muted: #8b8b96;
-      --accent: #c9a227;
-      --accent-hover: #d4b03a;
-      --danger: #c62828;
+      --text-2: #b8b8c0;
+      --muted: #6b6b75;
+      --accent: #d4a82b;
+      --accent-hover: #e0b83d;
+      --accent-soft: rgba(212, 168, 43, 0.15);
       --success: #2e7d32;
+      --success-soft: rgba(46, 125, 50, 0.2);
+      --error: #c62828;
+      --error-soft: rgba(198, 40, 40, 0.2);
+      --touch: 44px;
+      --radius: 10px;
+      --radius-sm: 8px;
+      --safe-bottom: env(safe-area-inset-bottom, 0);
+      --safe-top: env(safe-area-inset-top, 0);
     }
-    body { font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; background: var(--bg); color: var(--text); min-height: 100vh; }
-    .layout { display: flex; flex-direction: column; min-height: 100vh; max-width: 1200px; margin: 0 auto; padding: 0 1rem; }
-    header { display: flex; align-items: center; gap: 1rem; padding: 1rem 0; border-bottom: 1px solid var(--border); }
-    header h1 { font-size: 1.25rem; font-weight: 600; margin: 0; color: var(--accent); }
-    .tabs { display: flex; gap: 0.25rem; margin-bottom: 1.5rem; }
-    .tabs button { padding: 0.5rem 1rem; background: var(--surface); border: 1px solid var(--border); color: var(--text); cursor: pointer; border-radius: 6px; font-size: 0.9rem; }
-    .tabs button:hover { background: var(--border); }
-    .tabs button.active { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 15px;
+      line-height: 1.4;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      min-height: 100dvh;
+      padding-bottom: var(--safe-bottom);
+    }
+
+    .layout { max-width: 900px; margin: 0 auto; padding: 0 16px; padding-top: var(--safe-top); }
+
+    /* Header: compacto no mobile */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 0;
+      margin: 0 -16px;
+      padding-left: 16px;
+      padding-right: 16px;
+    }
+    header h1 { font-size: 1.15rem; font-weight: 600; margin: 0; color: var(--accent); }
+
+    /* Tabs: full-width no mobile, touch-friendly */
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin: 16px 0 20px;
+      padding: 4px;
+      background: var(--surface);
+      border-radius: var(--radius);
+    }
+    .tabs button {
+      flex: 1;
+      min-height: var(--touch);
+      padding: 0 12px;
+      background: transparent;
+      border: none;
+      border-radius: var(--radius-sm);
+      color: var(--text-2);
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background .15s, color .15s;
+    }
+    .tabs button:hover { color: var(--text); background: var(--surface-2); }
+    .tabs button.active { background: var(--accent); color: var(--bg); }
+
     .panel { display: none; }
-    .panel.active { display: block; }
-    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
-    th, td { text-align: left; padding: 0.75rem; border-bottom: 1px solid var(--border); }
-    th { color: var(--muted); font-weight: 500; }
-    tr:hover { background: var(--surface); }
-    .btn { padding: 0.5rem 1rem; border: none; border-radius: 6px; cursor: pointer; font-size: 0.875rem; }
-    .btn-primary { background: var(--accent); color: var(--bg); }
-    .btn-primary:hover { background: var(--accent-hover); }
-    .btn-secondary { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
-    .btn-secondary:hover { background: var(--border); }
-    .btn-sm { padding: 0.35rem 0.65rem; font-size: 0.8rem; }
-    label { display: block; margin-top: 0.75rem; font-weight: 500; color: var(--muted); font-size: 0.875rem; }
-    input[type="text"], input[type="number"], input[type="datetime-local"], textarea, select {
-      width: 100%; padding: 0.5rem; margin-top: 0.25rem; background: var(--surface); border: 1px solid var(--border);
-      color: var(--text); border-radius: 6px;
+    .panel.active { display: block; padding-bottom: 24px; }
+
+    /* Cards de lista: mobile-first (sempre cards no mobile) */
+    .list-cards { display: flex; flex-direction: column; gap: 10px; }
+    .card-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      min-height: var(--touch);
+      padding: 14px 16px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      text-decoration: none;
+      color: inherit;
     }
-    input[type="file"] { margin-top: 0.25rem; }
-    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-    @media (max-width: 640px) { .form-row { grid-template-columns: 1fr; } }
-    .msg { margin-top: 1rem; padding: 0.75rem; border-radius: 6px; font-size: 0.9rem; }
-    .msg.success { background: rgba(46,125,50,0.2); color: #81c784; }
-    .msg.error { background: rgba(198,40,40,0.2); color: #e57373; }
-    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin-bottom: 1rem; }
-    .card h2 { margin: 0 0 1rem; font-size: 1.1rem; }
-    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 100; padding: 1rem; }
-    .modal-overlay.open { display: flex; }
-    .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; max-width: 480px; width: 100%; max-height: 90vh; overflow-y: auto; }
-    .modal h3 { margin: 0 0 1rem; font-size: 1.1rem; }
-    .modal-actions { display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1.25rem; }
-    .badge { display: inline-block; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 500; }
+    .card-row:active { background: var(--surface-2); }
+    .card-row-main { flex: 1; min-width: 0; }
+    .card-row-title { font-weight: 500; margin: 0 0 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .card-row-meta { font-size: 0.85rem; color: var(--muted); }
+    .card-row-actions { flex-shrink: 0; }
+
+    /* Tabela: só em telas maiores */
+    .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .table-wrap table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    .table-wrap th, .table-wrap td { text-align: left; padding: 12px 10px; border-bottom: 1px solid var(--border); }
+    .table-wrap th { color: var(--muted); font-weight: 500; font-size: 0.8rem; }
+    .table-wrap tr:last-child td { border-bottom: none; }
+    .table-wrap .mobile-only { display: none; }
+
+    /* Botões */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: var(--touch);
+      padding: 0 20px;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-size: 0.95rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background .15s, opacity .15s;
+    }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .btn-primary { background: var(--accent); color: var(--bg); }
+    .btn-primary:hover:not(:disabled) { background: var(--accent-hover); }
+    .btn-secondary { background: var(--surface-2); color: var(--text); border: 1px solid var(--border); }
+    .btn-secondary:hover:not(:disabled) { background: var(--border); }
+    .btn-block { width: 100%; }
+    .btn-sm { min-height: 36px; padding: 0 14px; font-size: 0.85rem; }
+
+    /* Formulário */
+    .form-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .form-card h2 { margin: 0 0 20px; font-size: 1.1rem; }
+    .field { margin-bottom: 16px; }
+    .field:last-of-type { margin-bottom: 0; }
+    label { display: block; margin-bottom: 6px; font-size: 0.85rem; font-weight: 500; color: var(--text-2); }
+    input[type="text"], input[type="number"], input[type="datetime-local"], select {
+      width: 100%;
+      min-height: var(--touch);
+      padding: 0 14px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-size: 16px; /* evita zoom no iOS */
+    }
+    input[type="file"] { margin-top: 6px; font-size: 0.9rem; color: var(--text-2); }
+    input[type="checkbox"] { width: 18px; height: 18px; margin-right: 8px; vertical-align: middle; }
+    .form-actions { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
+    .form-actions .btn { flex: 1; min-width: 120px; }
+
+    /* Grid de campos: 1 col mobile, 2 cols desktop */
+    .form-grid { display: grid; gap: 16px; }
+    @media (min-width: 480px) { .form-grid { grid-template-columns: 1fr 1fr; } }
+
+    /* Mensagens */
+    .msg { margin-top: 16px; padding: 12px 14px; border-radius: var(--radius-sm); font-size: 0.9rem; }
+    .msg.success { background: var(--success-soft); color: #81c784; }
+    .msg.error { background: var(--error-soft); color: #e57373; }
+
+    /* Badge status */
+    .badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
     .badge-received { background: #37474f; color: #b0bec5; }
     .badge-confirmed { background: #1565c0; color: #90caf9; }
     .badge-preparing { background: #6a1b9a; color: #ce93d8; }
-    .badge-shipped, .badge-in_transit { background: #f57c00; color: #ffe0b2; }
+    .badge-shipped, .badge-in-transit { background: #e65100; color: #ffcc80; }
     .badge-delivered { background: #2e7d32; color: #a5d6a7; }
     .badge-cancelled { background: #c62828; color: #ef9a9a; }
-    .empty { color: var(--muted); padding: 2rem; text-align: center; }
-    a.link { color: var(--accent); text-decoration: none; }
-    a.link:hover { text-decoration: underline; }
+
+    .empty { text-align: center; padding: 40px 20px; color: var(--muted); font-size: 0.95rem; }
+
+    /* Modal: full-screen no mobile, centralizado no desktop */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      display: none;
+      align-items: flex-end;
+      justify-content: center;
+      z-index: 100;
+      padding: 0;
+    }
+    .modal-overlay.open { display: flex; }
+    @media (min-width: 500px) {
+      .modal-overlay { align-items: center; padding: 16px; }
+    }
+    .modal {
+      width: 100%;
+      max-width: 440px;
+      max-height: 92vh;
+      max-height: 92dvh;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius) var(--radius) 0 0;
+      padding: 20px;
+      padding-bottom: calc(20px + var(--safe-bottom));
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    @media (min-width: 500px) {
+      .modal { border-radius: var(--radius); max-height: 90vh; }
+    }
+    .modal h3 { margin: 0 0 20px; font-size: 1.05rem; }
+    .modal .field { margin-bottom: 14px; }
+    .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; flex-wrap: wrap; }
+
+    /* Top bar da seção */
+    .section-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+    .section-top h2 { margin: 0; font-size: 1rem; font-weight: 600; color: var(--text-2); }
+
+    /* Esconder tabela no mobile, mostrar cards; no desktop mostrar tabela */
+    .products-cards, .orders-cards { display: block; }
+    .products-table, .orders-table { display: none; }
+    @media (min-width: 640px) {
+      .products-cards, .orders-cards { display: none; }
+      .products-table, .orders-table { display: block; }
+    }
   </style>
 </head>
 <body>
   <div class="layout">
     <header>
-      <h1>Artilheiro Store – Admin</h1>
+      <h1>Artilheiro Admin</h1>
     </header>
 
-    <div class="tabs">
-      <button type="button" class="tab-btn active" data-panel="produtos">Produtos</button>
-      <button type="button" class="tab-btn" data-panel="pedidos">Pedidos</button>
+    <div class="tabs" role="tablist">
+      <button type="button" class="tab-btn active" data-panel="produtos" role="tab" aria-selected="true">Produtos</button>
+      <button type="button" class="tab-btn" data-panel="pedidos" role="tab" aria-selected="false">Pedidos</button>
     </div>
 
-    <div id="panel-produtos" class="panel active">
-      <div class="card">
+    <div id="panel-produtos" class="panel active" role="tabpanel">
+      <div class="section-top">
         <h2>Produtos</h2>
-        <button type="button" class="btn btn-primary" id="btn-novo-produto">Novo produto</button>
-        <div id="produtos-list" style="margin-top: 1rem;"></div>
+        <button type="button" class="btn btn-primary" id="btn-novo-produto">+ Novo</button>
       </div>
-      <div class="card" id="card-form-produto" style="display: none;">
-        <h2 id="form-produto-title">Cadastrar produto</h2>
+      <div id="produtos-list"></div>
+
+      <div class="form-card" id="card-form-produto" style="display: none;">
+        <h2 id="form-produto-title">Novo produto</h2>
         <form id="form-produto">
           <input type="hidden" id="produto-id" name="id" />
-          <div class="form-row">
-            <div>
+          <div class="form-grid">
+            <div class="field">
               <label for="name">Nome *</label>
               <input type="text" id="name" name="name" required placeholder="Ex: Camisa Flamengo 24/25" />
             </div>
-            <div>
+            <div class="field">
               <label for="team">Time *</label>
               <input type="text" id="team" name="team" required placeholder="Ex: Flamengo" />
             </div>
           </div>
-          <div class="form-row">
-            <div>
+          <div class="form-grid">
+            <div class="field">
               <label for="liga">Liga *</label>
               <input type="text" id="liga" name="liga" required placeholder="Ex: Brasileirão" />
             </div>
-            <div>
+            <div class="field">
               <label for="category">Categoria *</label>
               <input type="text" id="category" name="category" required placeholder="Ex: Camisa" />
             </div>
           </div>
-          <div class="form-row">
-            <div>
+          <div class="form-grid">
+            <div class="field">
               <label for="price">Preço *</label>
-              <input type="number" id="price" name="price" step="0.01" min="0.01" required placeholder="199.90" />
+              <input type="number" id="price" name="price" step="0.01" min="0.01" required placeholder="199,90" inputmode="decimal" />
             </div>
-            <div>
-              <label for="sizes">Tamanhos (P:5, M:10, G:8) *</label>
-              <input type="text" id="sizes" name="sizes" required placeholder="P:5, M:10, G:8, GG:3" />
+            <div class="field">
+              <label for="sizes">Tamanhos *</label>
+              <input type="text" id="sizes" name="sizes" required placeholder="P:5, M:10, G:8" />
             </div>
           </div>
-          <label><input type="checkbox" id="active" name="active" checked /> Ativo</label>
-          <label for="images">Imagens (opcional; ao editar, substituem as atuais)</label>
-          <input type="file" id="images" name="images" accept="image/jpeg,image/png,image/webp" multiple />
-          <div style="margin-top: 1rem;">
-            <button type="submit" class="btn btn-primary" id="btn-submit-produto">Salvar</button>
+          <div class="field">
+            <label><input type="checkbox" id="active" name="active" checked /> Ativo</label>
+          </div>
+          <div class="field">
+            <label for="images">Imagens (opcional)</label>
+            <input type="file" id="images" name="images" accept="image/jpeg,image/png,image/webp" multiple />
+          </div>
+          <div class="form-actions">
             <button type="button" class="btn btn-secondary" id="btn-cancel-produto">Cancelar</button>
+            <button type="submit" class="btn btn-primary" id="btn-submit-produto">Salvar</button>
           </div>
         </form>
         <div id="msg-produto"></div>
       </div>
     </div>
 
-    <div id="panel-pedidos" class="panel">
-      <div class="card">
+    <div id="panel-pedidos" class="panel" role="tabpanel" hidden>
+      <div class="section-top">
         <h2>Pedidos</h2>
-        <div id="pedidos-list"></div>
       </div>
+      <div id="pedidos-list"></div>
     </div>
 
-    <div id="modal-pedido" class="modal-overlay">
+    <div id="modal-pedido" class="modal-overlay" aria-hidden="true">
       <div class="modal">
-        <h3>Gerir pedido <span id="modal-pedido-codigo"></span></h3>
+        <h3>Pedido <span id="modal-pedido-codigo"></span></h3>
         <form id="form-pedido">
           <input type="hidden" id="pedido-id" />
-          <label for="pedido-status">Status</label>
-          <select id="pedido-status" name="status">
-            <option value="RECEIVED">Recebido</option>
-            <option value="CONFIRMED">Confirmado</option>
-            <option value="PREPARING">Em preparação</option>
-            <option value="SHIPPED">Enviado</option>
-            <option value="IN_TRANSIT">Em trânsito</option>
-            <option value="DELIVERED">Entregue</option>
-            <option value="CANCELLED">Cancelado</option>
-          </select>
-          <label for="pedido-shippedAt">Data de envio</label>
-          <input type="datetime-local" id="pedido-shippedAt" name="shippedAt" />
-          <label for="pedido-carrier">Transportadora</label>
-          <input type="text" id="pedido-carrier" name="carrier" placeholder="Ex: Correios, Jadlog" />
-          <label for="pedido-trackingCode">Código de rastreio</label>
-          <input type="text" id="pedido-trackingCode" name="trackingCode" placeholder="Ex: BR123456789" />
-          <label for="pedido-trackingUrl">Link de rastreio</label>
-          <input type="text" id="pedido-trackingUrl" name="trackingUrl" placeholder="https://..." />
+          <div class="field">
+            <label for="pedido-status">Status</label>
+            <select id="pedido-status" name="status">
+              <option value="RECEIVED">Recebido</option>
+              <option value="CONFIRMED">Confirmado</option>
+              <option value="PREPARING">Em preparação</option>
+              <option value="SHIPPED">Enviado</option>
+              <option value="IN_TRANSIT">Em trânsito</option>
+              <option value="DELIVERED">Entregue</option>
+              <option value="CANCELLED">Cancelado</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="pedido-shippedAt">Data de envio</label>
+            <input type="datetime-local" id="pedido-shippedAt" name="shippedAt" />
+          </div>
+          <div class="field">
+            <label for="pedido-carrier">Transportadora</label>
+            <input type="text" id="pedido-carrier" name="carrier" placeholder="Ex: Correios" />
+          </div>
+          <div class="field">
+            <label for="pedido-trackingCode">Código de rastreio</label>
+            <input type="text" id="pedido-trackingCode" name="trackingCode" placeholder="Ex: BR123456789" />
+          </div>
+          <div class="field">
+            <label for="pedido-trackingUrl">Link de rastreio</label>
+            <input type="text" id="pedido-trackingUrl" name="trackingUrl" placeholder="https://..." inputmode="url" />
+          </div>
           <div class="modal-actions">
             <button type="button" class="btn btn-secondary" id="btn-fechar-pedido">Fechar</button>
-            <button type="submit" class="btn btn-primary">Salvar alterações</button>
+            <button type="submit" class="btn btn-primary">Salvar</button>
           </div>
         </form>
         <div id="msg-pedido"></div>
@@ -191,53 +376,92 @@
       return Object.entries(sizes).map(([s, q]) => s + ':' + q).join(', ');
     }
 
-    // ---- Tabs ----
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-        btn.classList.add('active');
-        document.getElementById('panel-' + btn.dataset.panel).classList.add('active');
-        if (btn.dataset.panel === 'pedidos') loadPedidos();
-      });
-    });
-
-    // ---- Produtos ----
-    async function loadProdutos() {
-      const res = await fetch(API_PRODUCTS + '/admin');
-      const list = await res.json();
-      const el = document.getElementById('produtos-list');
-      if (!list.length) {
-        el.innerHTML = '<p class="empty">Nenhum produto cadastrado.</p>';
-        return;
-      }
-      el.innerHTML = `
-        <table>
-          <thead><tr><th>Nome</th><th>Time</th><th>Categoria</th><th>Preço</th><th>Ativo</th><th></th></tr></thead>
-          <tbody>
-            ${list.map(p => `
-              <tr>
-                <td>${escapeHtml(p.name)}</td>
-                <td>${escapeHtml(p.team)}</td>
-                <td>${escapeHtml(p.category)}</td>
-                <td>R$ ${Number(p.price).toFixed(2).replace('.', ',')}</td>
-                <td>${p.active ? 'Sim' : 'Não'}</td>
-                <td><button type="button" class="btn btn-secondary btn-sm btn-edit-produto" data-id="${p.id}">Editar</button></td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-      `;
-      el.querySelectorAll('.btn-edit-produto').forEach(b => {
-        b.addEventListener('click', () => openEditProduto(list.find(p => p.id === b.dataset.id)));
-      });
-    }
-
     function escapeHtml(s) {
       if (s == null) return '';
       const div = document.createElement('div');
       div.textContent = s;
       return div.innerHTML;
+    }
+
+    function formatDateTime(s) {
+      if (!s) return '-';
+      try {
+        const d = new Date(s);
+        return isNaN(d.getTime()) ? s : d.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+      } catch (_) { return s; }
+    }
+
+    function formatDate(s) {
+      if (!s) return '-';
+      try {
+        const d = new Date(s);
+        return isNaN(d.getTime()) ? s : d.toLocaleDateString('pt-BR');
+      } catch (_) { return s; }
+    }
+
+    function formatPrice(n) {
+      return 'R$ ' + Number(n).toFixed(2).replace('.', ',');
+    }
+
+    // Tabs
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => { b.classList.remove('active'); b.setAttribute('aria-selected', 'false'); });
+        document.querySelectorAll('.panel').forEach(p => { p.classList.remove('active'); p.setAttribute('hidden', ''); });
+        btn.classList.add('active');
+        btn.setAttribute('aria-selected', 'true');
+        const panel = document.getElementById('panel-' + btn.dataset.panel);
+        panel.classList.add('active');
+        panel.removeAttribute('hidden');
+        if (btn.dataset.panel === 'pedidos') loadPedidos();
+      });
+    });
+
+    // Produtos
+    async function loadProdutos() {
+      const res = await fetch(API_PRODUCTS + '/admin');
+      const list = await res.json();
+      const el = document.getElementById('produtos-list');
+      if (!list.length) {
+        el.innerHTML = '<p class="empty">Nenhum produto. Toque em + Novo para cadastrar.</p>';
+        return;
+      }
+      const badge = (p) => p.active ? '<span class="badge badge-delivered">Ativo</span>' : '<span class="badge badge-cancelled">Inativo</span>';
+      el.innerHTML = `
+        <div class="products-cards list-cards">
+          ${list.map(p => `
+            <div class="card-row">
+              <div class="card-row-main">
+                <p class="card-row-title">${escapeHtml(p.name)}</p>
+                <p class="card-row-meta">${escapeHtml(p.team)} · ${formatPrice(p.price)} · ${badge(p)}</p>
+              </div>
+              <div class="card-row-actions">
+                <button type="button" class="btn btn-secondary btn-sm btn-edit-produto" data-id="${p.id}">Editar</button>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+        <div class="products-table table-wrap">
+          <table>
+            <thead><tr><th>Nome</th><th>Time</th><th>Categoria</th><th>Preço</th><th>Ativo</th><th></th></tr></thead>
+            <tbody>
+              ${list.map(p => `
+                <tr>
+                  <td>${escapeHtml(p.name)}</td>
+                  <td>${escapeHtml(p.team)}</td>
+                  <td>${escapeHtml(p.category)}</td>
+                  <td>${formatPrice(p.price)}</td>
+                  <td>${p.active ? 'Sim' : 'Não'}</td>
+                  <td><button type="button" class="btn btn-secondary btn-sm btn-edit-produto" data-id="${p.id}">Editar</button></td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+      el.querySelectorAll('.btn-edit-produto').forEach(b => {
+        b.addEventListener('click', () => openEditProduto(list.find(p => p.id === b.dataset.id)));
+      });
     }
 
     function openEditProduto(p) {
@@ -253,15 +477,17 @@
       document.getElementById('images').value = '';
       document.getElementById('card-form-produto').style.display = 'block';
       document.getElementById('msg-produto').textContent = '';
+      document.getElementById('card-form-produto').scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
     document.getElementById('btn-novo-produto').addEventListener('click', () => {
-      document.getElementById('form-produto-title').textContent = 'Cadastrar produto';
+      document.getElementById('form-produto-title').textContent = 'Novo produto';
       document.getElementById('form-produto').reset();
       document.getElementById('produto-id').value = '';
       document.getElementById('active').checked = true;
       document.getElementById('card-form-produto').style.display = 'block';
       document.getElementById('msg-produto').textContent = '';
+      document.getElementById('card-form-produto').scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
 
     document.getElementById('btn-cancel-produto').addEventListener('click', () => {
@@ -299,36 +525,21 @@
       msgEl.textContent = '';
       try {
         const files = document.getElementById('images').files;
-        if (id) {
-          const formData = new FormData();
-          formData.append('product', new Blob([JSON.stringify(product)], { type: 'application/json' }), 'product.json');
-          for (let i = 0; i < files.length; i++) formData.append('images', files[i], files[i].name);
-          const res = await fetch(API_PRODUCTS + '/' + id, { method: 'PUT', body: formData });
-          if (res.ok) {
-            msgEl.textContent = 'Produto atualizado com sucesso.';
-            msgEl.className = 'msg success';
-            loadProdutos();
-            document.getElementById('card-form-produto').style.display = 'none';
-          } else {
-            const data = await res.json().catch(() => ({}));
-            msgEl.textContent = data.message || 'Erro ' + res.status;
-            msgEl.className = 'msg error';
-          }
+        const formData = new FormData();
+        formData.append('product', new Blob([JSON.stringify(product)], { type: 'application/json' }), 'product.json');
+        for (let i = 0; i < files.length; i++) formData.append('images', files[i], files[i].name);
+        const url = id ? API_PRODUCTS + '/' + id : API_PRODUCTS;
+        const method = id ? 'PUT' : 'POST';
+        const res = await fetch(url, { method, body: formData });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok) {
+          msgEl.textContent = id ? 'Produto atualizado.' : 'Produto cadastrado.';
+          msgEl.className = 'msg success';
+          loadProdutos();
+          document.getElementById('card-form-produto').style.display = 'none';
         } else {
-          const formData = new FormData();
-          formData.append('product', new Blob([JSON.stringify(product)], { type: 'application/json' }), 'product.json');
-          for (let i = 0; i < files.length; i++) formData.append('images', files[i], files[i].name);
-          const res = await fetch(API_PRODUCTS, { method: 'POST', body: formData });
-          const data = await res.json().catch(() => ({}));
-          if (res.ok) {
-            msgEl.textContent = 'Produto cadastrado com sucesso.';
-            msgEl.className = 'msg success';
-            document.getElementById('form-produto').reset();
-            loadProdutos();
-          } else {
-            msgEl.textContent = data.message || 'Erro ' + res.status;
-            msgEl.className = 'msg error';
-          }
+          msgEl.textContent = data.message || 'Erro ' + res.status;
+          msgEl.className = 'msg error';
         }
       } catch (err) {
         msgEl.textContent = 'Erro de rede: ' + err.message;
@@ -337,7 +548,7 @@
       btn.disabled = false;
     });
 
-    // ---- Pedidos ----
+    // Pedidos
     async function loadPedidos() {
       const res = await fetch(API_ORDERS + '/admin');
       const list = await res.json();
@@ -346,43 +557,42 @@
         el.innerHTML = '<p class="empty">Nenhum pedido.</p>';
         return;
       }
+      const statusClass = (s) => 'badge badge-' + (s || '').toLowerCase().replace('_', '-');
       el.innerHTML = `
-        <table>
-          <thead>
-            <tr>
-              <th>Código</th>
-              <th>Total</th>
-              <th>Status</th>
-              <th>Data</th>
-              <th>Enviado em</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            ${list.map(o => `
-              <tr>
-                <td>${escapeHtml(o.orderCode)}</td>
-                <td>R$ ${Number(o.total).toFixed(2).replace('.', ',')}</td>
-                <td><span class="badge badge-${(o.status || '').toLowerCase()}">${escapeHtml(o.status)}</span></td>
-                <td>${o.createdAt || '-'}</td>
-                <td>${o.shippedAt ? formatDateTime(o.shippedAt) : '-'}</td>
-                <td><button type="button" class="btn btn-secondary btn-sm btn-gerir-pedido" data-id="${o.id}">Gerir</button></td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
+        <div class="orders-cards list-cards">
+          ${list.map(o => `
+            <div class="card-row">
+              <div class="card-row-main">
+                <p class="card-row-title">${escapeHtml(o.orderCode)}</p>
+                <p class="card-row-meta">${formatPrice(o.total)} · ${formatDate(o.createdAt)} · <span class="${statusClass(o.status)}">${escapeHtml(o.status)}</span></p>
+              </div>
+              <div class="card-row-actions">
+                <button type="button" class="btn btn-primary btn-sm btn-gerir-pedido" data-id="${o.id}">Gerir</button>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+        <div class="orders-table table-wrap">
+          <table>
+            <thead><tr><th>Código</th><th>Total</th><th>Status</th><th>Data</th><th>Enviado</th><th></th></tr></thead>
+            <tbody>
+              ${list.map(o => `
+                <tr>
+                  <td>${escapeHtml(o.orderCode)}</td>
+                  <td>${formatPrice(o.total)}</td>
+                  <td><span class="${statusClass(o.status)}">${escapeHtml(o.status)}</span></td>
+                  <td>${o.createdAt || '-'}</td>
+                  <td>${o.shippedAt ? formatDateTime(o.shippedAt) : '-'}</td>
+                  <td><button type="button" class="btn btn-primary btn-sm btn-gerir-pedido" data-id="${o.id}">Gerir</button></td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
       `;
       el.querySelectorAll('.btn-gerir-pedido').forEach(b => {
         b.addEventListener('click', () => openModalPedido(list.find(o => o.id === b.dataset.id)));
       });
-    }
-
-    function formatDateTime(s) {
-      if (!s) return '-';
-      try {
-        const d = new Date(s);
-        return isNaN(d.getTime()) ? s : d.toLocaleString('pt-BR');
-      } catch (_) { return s; }
     }
 
     function openModalPedido(o) {
@@ -395,14 +605,19 @@
       document.getElementById('pedido-trackingUrl').value = o.trackingUrl || '';
       document.getElementById('msg-pedido').textContent = '';
       document.getElementById('modal-pedido').classList.add('open');
+      document.getElementById('modal-pedido').setAttribute('aria-hidden', 'false');
     }
 
     document.getElementById('btn-fechar-pedido').addEventListener('click', () => {
       document.getElementById('modal-pedido').classList.remove('open');
+      document.getElementById('modal-pedido').setAttribute('aria-hidden', 'true');
     });
 
     document.getElementById('modal-pedido').addEventListener('click', (e) => {
-      if (e.target.id === 'modal-pedido') e.target.classList.remove('open');
+      if (e.target.id === 'modal-pedido') {
+        e.target.classList.remove('open');
+        e.target.setAttribute('aria-hidden', 'true');
+      }
     });
 
     document.getElementById('form-pedido').addEventListener('submit', async (e) => {
@@ -424,10 +639,13 @@
           body: JSON.stringify(payload)
         });
         if (res.ok) {
-          msgEl.textContent = 'Pedido atualizado.';
+          msgEl.textContent = 'Salvo.';
           msgEl.className = 'msg success';
           loadPedidos();
-          setTimeout(() => document.getElementById('modal-pedido').classList.remove('open'), 800);
+          setTimeout(() => {
+            document.getElementById('modal-pedido').classList.remove('open');
+            document.getElementById('modal-pedido').setAttribute('aria-hidden', 'true');
+          }, 600);
         } else {
           const data = await res.json().catch(() => ({}));
           msgEl.textContent = data.message || 'Erro ' + res.status;

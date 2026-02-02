@@ -12,4 +12,6 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
     long countByCreatedAtBetween(LocalDateTime start, LocalDateTime end);
 
     Optional<Order> findByOrderNumberAndEmailIgnoreCase(String orderNumber, String email);
+
+    Optional<Order> findByOrderNumber(String orderNumber);
 }

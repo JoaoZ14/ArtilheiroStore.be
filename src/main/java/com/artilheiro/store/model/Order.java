@@ -64,7 +64,14 @@ public class Order {
     @Column(name = "tracking_url", length = 500)
     private String trackingUrl;
 
+    @Column(name = "payment_preference_id", length = 255)
+    private String paymentPreferenceId;
+
+    @Column(name = "payment_id", length = 50)
+    private String paymentId;
+
     public enum OrderStatus {
+        PAYMENT_PENDING,
         RECEIVED,
         CONFIRMED,
         PREPARING,
@@ -187,5 +194,21 @@ public class Order {
 
     public void setTrackingUrl(String trackingUrl) {
         this.trackingUrl = trackingUrl;
+    }
+
+    public String getPaymentPreferenceId() {
+        return paymentPreferenceId;
+    }
+
+    public void setPaymentPreferenceId(String paymentPreferenceId) {
+        this.paymentPreferenceId = paymentPreferenceId;
+    }
+
+    public String getPaymentId() {
+        return paymentId;
+    }
+
+    public void setPaymentId(String paymentId) {
+        this.paymentId = paymentId;
     }
 }

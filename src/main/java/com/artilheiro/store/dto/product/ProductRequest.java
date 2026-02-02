@@ -30,6 +30,10 @@ public class ProductRequest {
     @DecimalMin(value = "0.01", message = "Preço deve ser positivo")
     private BigDecimal price;
 
+    /** Preço promocional (opcional). Se preenchido, exibe em vez do preço principal na vitrine. */
+    @DecimalMin(value = "0.01", message = "Preço promocional deve ser positivo")
+    private BigDecimal promoPrice;
+
     @NotNull(message = "Tamanhos são obrigatórios")
     private Map<String, Integer> sizes;
 
@@ -76,6 +80,14 @@ public class ProductRequest {
 
     public void setPrice(BigDecimal price) {
         this.price = price;
+    }
+
+    public BigDecimal getPromoPrice() {
+        return promoPrice;
+    }
+
+    public void setPromoPrice(BigDecimal promoPrice) {
+        this.promoPrice = promoPrice;
     }
 
     public Map<String, Integer> getSizes() {

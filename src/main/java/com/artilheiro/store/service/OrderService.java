@@ -5,10 +5,13 @@ import com.artilheiro.store.dto.order.OrderLookupResponse;
 import com.artilheiro.store.dto.order.OrderRequest;
 import com.artilheiro.store.dto.order.OrderResponse;
 import com.artilheiro.store.dto.order.OrderUpdateRequest;
+import com.mercadopago.resources.payment.Payment;
 import com.artilheiro.store.model.Order;
 import com.artilheiro.store.model.Product;
 import com.artilheiro.store.repository.OrderRepository;
 import com.artilheiro.store.repository.ProductRepository;
+import com.mercadopago.exceptions.MPApiException;
+import com.mercadopago.exceptions.MPException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,13 +33,17 @@ public class OrderService {
 
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
+    private final MercadoPagoService mercadoPagoService;
 
-    public OrderService(OrderRepository orderRepository, ProductRepository productRepository) {
+    public OrderService(OrderRepository orderRepository, ProductRepository productRepository,
+                        MercadoPagoService mercadoPagoService) {
         this.orderRepository = orderRepository;
         this.productRepository = productRepository;
+        this.mercadoPagoService = mercadoPagoService;
     }
 
-    public OrderResponse create(OrderRequest request) {
+    @Transactional
+    public OrderResponse create(OrderRequest request) throws MPException, MPApiException {
         Order order = new Order();
         order.setId(UUID.randomUUID());
         order.setOrderNumber(generateOrderNumber());
@@ -44,14 +51,31 @@ public class OrderService {
         order.setEmail(request.getCustomer().getEmail());
         order.setCpf(request.getCustomer().getCpf());
         order.setAddress(toAddressMap(request.getAddress()));
-        order.setItems(toItemsMapList(request.getItems()));
-        order.setTotal(request.getTotal());
-        order.setStatus(Order.OrderStatus.RECEIVED);
+        List<Map<String, Object>> items = toItemsMapList(request.getItems());
+        order.setItems(items);
+        order.setTotal(calculateOrderTotal(items));
+        order.setStatus(Order.OrderStatus.PAYMENT_PENDING);
         order.setCreatedAt(LocalDateTime.now());
 
         orderRepository.save(order);
 
-        return new OrderResponse(order.getOrderNumber(), order.getStatus().name());
+        MercadoPagoService.PreferenceResult preference = mercadoPagoService.createPreference(
+                order.getOrderNumber(),
+                order.getItems(),
+                order.getTotal(),
+                order.getEmail(),
+                order.getCustomerName()
+        );
+
+        order.setPaymentPreferenceId(preference.preferenceId());
+        orderRepository.save(order);
+
+        return new OrderResponse(
+                order.getOrderNumber(),
+                order.getStatus().name(),
+                preference.checkoutUrl(),
+                preference.preferenceId()
+        );
     }
 
     @Transactional(readOnly = true)
@@ -65,6 +89,41 @@ public class OrderService {
     public Optional<OrderLookupResponse> lookupOrder(String email, String code) {
         return orderRepository.findByOrderNumberAndEmailIgnoreCase(code, email)
                 .map(this::toLookupResponse);
+    }
+
+    /**
+     * Processa notificação webhook do Mercado Pago.
+     * Se type == "payment" e status do pagamento == "approved", atualiza o pedido para RECEIVED e grava payment_id.
+     */
+    @Transactional
+    public void processMercadoPagoWebhook(String type, String paymentIdStr) throws MPException, MPApiException {
+        if (type == null || !"payment".equals(type.trim()) || paymentIdStr == null || paymentIdStr.isBlank()) {
+            return;
+        }
+        Long paymentId;
+        try {
+            paymentId = Long.parseLong(paymentIdStr.trim());
+        } catch (NumberFormatException e) {
+            return;
+        }
+        Payment payment = mercadoPagoService.getPayment(paymentId);
+        if (payment == null) {
+            return;
+        }
+        if (!"approved".equals(payment.getStatus())) {
+            return;
+        }
+        String externalReference = payment.getExternalReference();
+        if (externalReference == null || externalReference.isBlank()) {
+            return;
+        }
+        orderRepository.findByOrderNumber(externalReference.trim()).ifPresent(order -> {
+            if (order.getStatus() == Order.OrderStatus.PAYMENT_PENDING) {
+                order.setStatus(Order.OrderStatus.RECEIVED);
+                order.setPaymentId(String.valueOf(payment.getId()));
+                orderRepository.save(order);
+            }
+        });
     }
 
     @Transactional
@@ -189,7 +248,7 @@ public class OrderService {
             map.put("productId", productIdStr);
             map.put("size", item.getSize());
             map.put("quantity", item.getQuantity());
-            map.put("unitPrice", item.getUnitPrice());
+            BigDecimal unitPrice = item.getUnitPrice();
 
             try {
                 UUID productId = UUID.fromString(productIdStr);
@@ -203,12 +262,30 @@ public class OrderService {
                     map.put("team", product.getTeam());
                     map.put("liga", product.getLiga());
                     map.put("category", product.getCategory());
+                    BigDecimal effectivePrice = product.getPromoPrice() != null && product.getPromoPrice().compareTo(BigDecimal.ZERO) > 0
+                            ? product.getPromoPrice() : product.getPrice();
+                    map.put("unitPrice", effectivePrice);
                 });
             } catch (IllegalArgumentException ignored) {
                 // productId inválido: mantém só os dados enviados
             }
+            if (!map.containsKey("unitPrice")) {
+                map.put("unitPrice", unitPrice);
+            }
             list.add(map);
         }
         return list;
+    }
+
+    private BigDecimal calculateOrderTotal(List<Map<String, Object>> items) {
+        BigDecimal total = BigDecimal.ZERO;
+        for (Map<String, Object> item : items) {
+            BigDecimal price = toBigDecimal(item.get("unitPrice"));
+            Integer qty = toInteger(item.get("quantity"));
+            if (price != null && qty != null && qty > 0) {
+                total = total.add(price.multiply(BigDecimal.valueOf(qty)));
+            }
+        }
+        return total;
     }
 }

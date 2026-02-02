@@ -84,6 +84,7 @@ public class ProductService {
                     product.setLiga(request.getLiga());
                     product.setCategory(request.getCategory());
                     product.setPrice(request.getPrice());
+                    product.setPromoPrice(request.getPromoPrice());
                     product.setSizes(request.getSizes());
                     product.setActive(request.getActive() != null ? request.getActive() : true);
 
@@ -136,6 +137,7 @@ public class ProductService {
         product.setLiga(request.getLiga());
         product.setCategory(request.getCategory());
         product.setPrice(request.getPrice());
+        product.setPromoPrice(request.getPromoPrice());
         product.setImages(imageUrls);
         product.setSizes(request.getSizes());
         product.setActive(request.getActive());
@@ -153,6 +155,7 @@ public class ProductService {
         dto.setLiga(product.getLiga());
         dto.setCategory(product.getCategory());
         dto.setPrice(product.getPrice());
+        dto.setPromoPrice(product.getPromoPrice());
         dto.setImages(product.getImages());
         dto.setSizes(product.getSizes());
         dto.setActive(product.getActive());

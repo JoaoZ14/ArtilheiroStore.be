@@ -1,10 +1,13 @@
 package com.artilheiro.store.controller;
 
+import com.artilheiro.store.dto.order.MercadoPagoWebhookPayload;
 import com.artilheiro.store.dto.order.OrderLookupResponse;
 import com.artilheiro.store.dto.order.OrderRequest;
 import com.artilheiro.store.dto.order.OrderResponse;
 import com.artilheiro.store.dto.order.OrderUpdateRequest;
 import com.artilheiro.store.service.OrderService;
+import com.mercadopago.exceptions.MPApiException;
+import com.mercadopago.exceptions.MPException;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -37,7 +40,7 @@ public class OrderController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public OrderResponse create(@Valid @RequestBody OrderRequest request) {
+    public OrderResponse create(@Valid @RequestBody OrderRequest request) throws MPException, MPApiException {
         return orderService.create(request);
     }
 
@@ -73,5 +76,22 @@ public class OrderController {
             return ResponseEntity.ok(result.get());
         }
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", MSG_NOT_FOUND));
+    }
+
+    /**
+     * Webhook do Mercado Pago para notificações de pagamento.
+     * Responde 200 rapidamente; o processamento atualiza o pedido quando o pagamento for aprovado.
+     */
+    @PostMapping("/webhook/mercadopago")
+    public ResponseEntity<Void> mercadoPagoWebhook(@RequestBody MercadoPagoWebhookPayload payload) {
+        String type = payload != null ? payload.getType() : null;
+        String paymentId = payload != null && payload.getData() != null ? payload.getData().getId() : null;
+        try {
+            orderService.processMercadoPagoWebhook(type, paymentId);
+        } catch (Exception e) {
+            // Log e responde 200 para o MP não reenviar; o problema pode ser temporário.
+            // Em produção, considere log estruturado e métricas.
+        }
+        return ResponseEntity.ok().build();
     }
 }

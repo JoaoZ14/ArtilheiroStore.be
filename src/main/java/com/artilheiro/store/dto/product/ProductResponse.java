@@ -13,6 +13,7 @@ public class ProductResponse {
     private String liga;
     private String category;
     private BigDecimal price;
+    private BigDecimal promoPrice;
     private List<String> images;
     private Map<String, Integer> sizes;
     private Boolean active;
@@ -66,6 +67,20 @@ public class ProductResponse {
 
     public void setPrice(BigDecimal price) {
         this.price = price;
+    }
+
+    public BigDecimal getPromoPrice() {
+        return promoPrice;
+    }
+
+    public void setPromoPrice(BigDecimal promoPrice) {
+        this.promoPrice = promoPrice;
+    }
+
+    /** Valor definitivo para cálculos: promoPrice se existir, senão price. */
+    public BigDecimal getEffectivePrice() {
+        return promoPrice != null && promoPrice.compareTo(BigDecimal.ZERO) > 0
+                ? promoPrice : price;
     }
 
     public List<String> getImages() {

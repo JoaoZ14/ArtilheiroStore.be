@@ -178,6 +178,14 @@
     .form-grid { display: grid; gap: 16px; }
     @media (min-width: 480px) { .form-grid { grid-template-columns: 1fr 1fr; } }
 
+    .sizes-block .detail-block-title { margin-bottom: 4px; font-size: 0.85rem; }
+    .size-row { display: flex; gap: 10px; align-items: center; margin-bottom: 8px; }
+    .size-row input[type="text"] { flex: 0 0 80px; min-height: 40px; padding: 0 10px; }
+    .size-row input[type="number"] { flex: 0 0 70px; min-height: 40px; padding: 0 10px; }
+    .size-row .btn-remove-size { flex-shrink: 0; min-height: 40px; min-width: 40px; padding: 0; border-radius: var(--radius-sm); background: var(--surface-2); color: var(--text-2); border: 1px solid var(--border); cursor: pointer; font-size: 1.2rem; line-height: 1; transition: background .15s, color .15s; }
+    .size-row .btn-remove-size:hover { background: var(--error-soft); color: var(--error); }
+    .sizes-block .btn-add-size { margin-top: 8px; min-height: 36px; padding: 0 14px; font-size: 0.9rem; }
+
     /* Mensagens */
     .msg { margin-top: 16px; padding: 12px 14px; border-radius: var(--radius-sm); font-size: 0.9rem; }
     .msg.success { background: var(--success-soft); color: #81c784; }
@@ -361,10 +369,16 @@
               <input type="number" id="price" name="price" step="0.01" min="0.01" required placeholder="199,90" inputmode="decimal" />
             </div>
             <div class="field">
-              <label for="sizes">Tamanhos / Estoque *</label>
-              <input type="text" id="sizes" name="sizes" required placeholder="Ex: P:5, M:10, G:8" aria-describedby="sizes-hint" />
-              <span id="sizes-hint" class="field-hint">Tamanho:quantidade separados por vírgula</span>
+              <label for="promoPrice">Preço promocional (opcional)</label>
+              <input type="number" id="promoPrice" name="promoPrice" step="0.01" min="0.01" placeholder="Ex: 149,90" inputmode="decimal" />
+              <span class="field-hint">Se preenchido, exibe em promoção mantendo o preço principal</span>
             </div>
+          </div>
+          <div class="field sizes-block">
+            <div class="detail-block-title">Tamanhos / Estoque *</div>
+            <p class="field-hint" style="margin-bottom: 10px;">Adicione cada tamanho e a quantidade em estoque.</p>
+            <div id="sizes-list"></div>
+            <button type="button" class="btn btn-secondary btn-add-size" id="btn-add-size">+ Adicionar tamanho</button>
           </div>
           <div class="field">
             <label><input type="checkbox" id="active" name="active" checked /> Ativo</label>
@@ -446,21 +460,60 @@
     const API_PRODUCTS = '/api/products';
     const API_ORDERS = '/api/orders';
 
-    function parseSizes(str) {
-      const out = {};
-      if (!str || !str.trim()) return out;
-      str.split(',').forEach(pair => {
-        const parts = pair.trim().split(':').map(s => s.trim());
-        const size = parts[0];
-        const qty = parts[1] !== undefined ? parseInt(parts[1], 10) : 0;
-        if (size) out[size] = isNaN(qty) ? 0 : qty;
+    function renderSizesRows(sizes) {
+      const list = document.getElementById('sizes-list');
+      list.innerHTML = '';
+      const entries = sizes && typeof sizes === 'object' && Object.keys(sizes).length > 0
+        ? Object.entries(sizes)
+        : [['', 0]];
+      entries.forEach(([size, qty]) => {
+        const row = document.createElement('div');
+        row.className = 'size-row';
+        row.innerHTML = `
+          <input type="text" class="size-label" placeholder="Ex: P" value="${escapeHtml(size)}" maxlength="20" aria-label="Tamanho" />
+          <input type="number" class="size-qty" min="0" step="1" value="${Number(qty) || 0}" aria-label="Quantidade" />
+          <button type="button" class="btn-remove-size" aria-label="Remover tamanho">×</button>
+        `;
+        list.appendChild(row);
       });
-      return out;
+      list.querySelectorAll('.btn-remove-size').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const row = btn.closest('.size-row');
+          const rows = list.querySelectorAll('.size-row');
+          if (rows.length > 1) row.remove();
+          else {
+            row.querySelector('.size-label').value = '';
+            row.querySelector('.size-qty').value = '0';
+          }
+        });
+      });
     }
 
-    function sizesToString(sizes) {
-      if (!sizes || typeof sizes !== 'object') return '';
-      return Object.entries(sizes).map(([s, q]) => s + ':' + q).join(', ');
+    function addSizeRow() {
+      const list = document.getElementById('sizes-list');
+      const row = document.createElement('div');
+      row.className = 'size-row';
+      row.innerHTML = `
+        <input type="text" class="size-label" placeholder="Ex: GG" maxlength="20" aria-label="Tamanho" />
+        <input type="number" class="size-qty" min="0" step="1" value="0" aria-label="Quantidade" />
+        <button type="button" class="btn-remove-size" aria-label="Remover tamanho">×</button>
+      `;
+      list.appendChild(row);
+      row.querySelector('.btn-remove-size').addEventListener('click', () => {
+        const rows = list.querySelectorAll('.size-row');
+        if (rows.length > 1) row.remove();
+      });
+    }
+
+    function getSizesFromForm() {
+      const list = document.getElementById('sizes-list');
+      const out = {};
+      list.querySelectorAll('.size-row').forEach(row => {
+        const label = (row.querySelector('.size-label').value || '').trim();
+        const qty = parseInt(row.querySelector('.size-qty').value, 10);
+        if (label) out[label] = isNaN(qty) || qty < 0 ? 0 : qty;
+      });
+      return out;
     }
 
     function escapeHtml(s) {
@@ -535,6 +588,7 @@
           liga: p.liga,
           category: p.category,
           price: p.price,
+          promoPrice: p.promoPrice != null ? p.promoPrice : null,
           sizes: p.sizes,
           active: newActive
         };
@@ -697,7 +751,8 @@
       document.getElementById('liga').value = p.liga;
       document.getElementById('category').value = p.category;
       document.getElementById('price').value = p.price;
-      document.getElementById('sizes').value = sizesToString(p.sizes);
+      document.getElementById('promoPrice').value = p.promoPrice != null ? p.promoPrice : '';
+      renderSizesRows(p.sizes);
       document.getElementById('active').checked = p.active;
       document.getElementById('images').value = '';
       renderProductCarousel(p.images);
@@ -711,6 +766,7 @@
       document.getElementById('form-produto').reset();
       document.getElementById('produto-id').value = '';
       document.getElementById('active').checked = true;
+      renderSizesRows(null);
       renderProductCarousel([]);
       document.getElementById('card-form-produto').style.display = 'block';
       document.getElementById('msg-produto').textContent = '';
@@ -728,6 +784,8 @@
       document.getElementById('card-form-produto').style.display = 'none';
     });
 
+    document.getElementById('btn-add-size').addEventListener('click', addSizeRow);
+
     document.getElementById('form-produto').addEventListener('submit', async (e) => {
       e.preventDefault();
       const msgEl = document.getElementById('msg-produto');
@@ -740,18 +798,21 @@
         msgEl.className = 'msg error';
         return;
       }
-      const sizes = parseSizes(document.getElementById('sizes').value.trim());
+      const sizes = getSizesFromForm();
       if (Object.keys(sizes).length === 0) {
-        msgEl.textContent = 'Informe ao menos um tamanho (ex: P:5, M:10).';
+        msgEl.textContent = 'Adicione ao menos um tamanho com nome (ex: P, M, G) e quantidade.';
         msgEl.className = 'msg error';
         return;
       }
+      const promoPriceVal = document.getElementById('promoPrice').value.trim().replace(',', '.');
+      const promoPrice = promoPriceVal === '' ? null : (parseFloat(promoPriceVal) > 0 ? parseFloat(promoPriceVal) : null);
       const product = {
         name: document.getElementById('name').value.trim(),
         team: document.getElementById('team').value.trim(),
         liga: document.getElementById('liga').value.trim(),
         category: document.getElementById('category').value.trim(),
         price,
+        promoPrice: promoPrice,
         sizes,
         active: document.getElementById('active').checked
       };

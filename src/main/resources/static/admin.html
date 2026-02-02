@@ -9,112 +9,81 @@
     *, *::before, *::after { box-sizing: border-box; }
     :root {
       --bg: #0f0f12;
-      --bg-page: #0a0a0d;
-      --surface: #16161a;
-      --surface-2: #1e1e24;
-      --surface-hover: #25252c;
-      --border: #2a2a32;
-      --text: #f0f0f4;
-      --text-2: #a0a0ac;
+      --surface: #1a1a1f;
+      --surface-2: #222228;
+      --border: #2d2d35;
+      --text: #e8e8ed;
+      --text-2: #b8b8c0;
       --muted: #6b6b75;
-      --accent: #6366f1;
-      --accent-hover: #818cf8;
-      --accent-soft: rgba(99, 102, 241, 0.12);
-      --success: #22c55e;
-      --success-soft: rgba(34, 197, 94, 0.15);
-      --warning: #eab308;
-      --warning-soft: rgba(234, 179, 8, 0.15);
-      --error: #ef4444;
-      --error-soft: rgba(239, 68, 68, 0.15);
-      --info: #3b82f6;
-      --info-soft: rgba(59, 130, 246, 0.15);
+      --accent: #d4a82b;
+      --accent-hover: #e0b83d;
+      --accent-soft: rgba(212, 168, 43, 0.15);
+      --success: #2e7d32;
+      --success-soft: rgba(46, 125, 50, 0.2);
+      --error: #c62828;
+      --error-soft: rgba(198, 40, 40, 0.2);
       --touch: 44px;
-      --radius: 12px;
+      --radius: 10px;
       --radius-sm: 8px;
-      --sidebar-w: 240px;
-      --sidebar-collapsed: 64px;
       --safe-bottom: env(safe-area-inset-bottom, 0);
       --safe-top: env(safe-area-inset-top, 0);
     }
 
     body {
       margin: 0;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', sans-serif;
-      font-size: 14px;
-      line-height: 1.5;
-      background: var(--bg-page);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 15px;
+      line-height: 1.4;
+      background: var(--bg);
       color: var(--text);
       min-height: 100vh;
       min-height: 100dvh;
       padding-bottom: var(--safe-bottom);
     }
 
-    .app-shell { display: flex; min-height: 100vh; min-height: 100dvh; }
+    .layout { max-width: 900px; margin: 0 auto; padding: 0 16px; padding-top: var(--safe-top); }
 
-    /* Sidebar */
-    .sidebar {
-      width: var(--sidebar-w);
-      min-width: var(--sidebar-w);
-      background: var(--surface);
-      border-right: 1px solid var(--border);
+    /* Header: compacto no mobile */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 0;
+      margin: 0 -16px;
+      padding-left: 16px;
+      padding-right: 16px;
+    }
+    header h1 { font-size: 1.15rem; font-weight: 600; margin: 0; color: var(--accent); }
+
+    /* Tabs: full-width no mobile, touch-friendly */
+    .tabs {
       display: flex;
-      flex-direction: column;
-      transition: width .2s, min-width .2s;
-      z-index: 60;
+      gap: 8px;
+      margin: 16px 0 20px;
+      padding: 4px;
+      background: var(--surface);
+      border-radius: var(--radius);
     }
-    .sidebar.collapsed { width: var(--sidebar-collapsed); min-width: var(--sidebar-collapsed); }
-    .sidebar-logo { padding: 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; min-height: 64px; }
-    .sidebar-logo span { font-weight: 700; font-size: 1.1rem; color: var(--text); white-space: nowrap; overflow: hidden; }
-    .sidebar.collapsed .sidebar-logo span { display: none; }
-    .sidebar-nav { flex: 1; padding: 12px 0; overflow-y: auto; }
-    .sidebar-nav a {
-      display: flex; align-items: center; gap: 12px; padding: 10px 20px; color: var(--text-2); text-decoration: none; transition: background .15s, color .15s; border-left: 3px solid transparent;
+    .tabs button {
+      flex: 1;
+      min-height: var(--touch);
+      padding: 0 12px;
+      background: transparent;
+      border: none;
+      border-radius: var(--radius-sm);
+      color: var(--text-2);
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background .15s, color .15s;
     }
-    .sidebar-nav a:hover { background: var(--surface-hover); color: var(--text); }
-    .sidebar-nav a.active { background: var(--accent-soft); color: var(--accent); border-left-color: var(--accent); font-weight: 500; }
-    .sidebar-nav .nav-icon { font-size: 1.2rem; width: 24px; text-align: center; flex-shrink: 0; }
-    .sidebar.collapsed .sidebar-nav a span { display: none; }
-    .sidebar.collapsed .sidebar-nav a { justify-content: center; padding: 10px; }
-    .sidebar-toggle { padding: 12px 20px; border-top: 1px solid var(--border); }
-    .sidebar-toggle button { width: 100%; min-height: 36px; background: transparent; border: none; border-radius: var(--radius-sm); color: var(--text-2); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: background .15s, color .15s; }
-    .sidebar-toggle button:hover { background: var(--surface-hover); color: var(--text); }
-    .sidebar.collapsed .sidebar-toggle button span { display: none; }
-    @media (max-width: 768px) {
-      .sidebar { position: fixed; left: 0; top: 0; bottom: 0; z-index: 70; }
-      .sidebar.collapsed { width: 0; min-width: 0; overflow: hidden; }
-      .main-content { padding: 16px; }
-      .kpi-grid { grid-template-columns: 1fr 1fr; }
-    }
+    .tabs button:hover { color: var(--text); background: var(--surface-2); }
+    .tabs button.active { background: var(--accent); color: var(--bg); }
 
-    /* Main area */
-    .main-wrap { flex: 1; display: flex; flex-direction: column; min-width: 0; }
-    .topbar {
-      min-height: 56px; padding: 0 24px; background: var(--surface); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
-    }
-    .topbar-search { flex: 1; min-width: 200px; max-width: 360px; }
-    .topbar-search input { width: 100%; min-height: 40px; padding: 0 14px 0 40px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text); font-size: 14px; }
-    .topbar-search input::placeholder { color: var(--muted); }
-    .topbar-actions { display: flex; align-items: center; gap: 12px; }
-    .topbar-profile { width: 36px; height: 36px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.85rem; }
-
-    .main-content { flex: 1; padding: 24px; overflow-y: auto; }
     .panel { display: none; }
-    .panel.active { display: block; }
-
-    /* Dashboard KPI */
-    .page-title { margin: 0 0 24px; font-size: 1.5rem; font-weight: 600; color: var(--text); }
-    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px; margin-bottom: 32px; }
-    .kpi-card {
-      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; transition: border-color .15s, box-shadow .15s;
-    }
-    .kpi-card:hover { border-color: var(--border); box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
-    .kpi-card .kpi-icon { width: 40px; height: 40px; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; font-size: 1.25rem; margin-bottom: 12px; }
-    .kpi-card .kpi-value { font-size: 1.5rem; font-weight: 700; color: var(--text); margin: 0 0 4px; }
-    .kpi-card .kpi-label { font-size: 0.8rem; color: var(--muted); margin: 0; }
-    .kpi-card .kpi-delta { font-size: 0.75rem; margin-top: 6px; }
-    .kpi-card .kpi-delta.positive { color: var(--success); }
-    .kpi-card .kpi-delta.negative { color: var(--error); }
-    .kpi-card .kpi-delta.neutral { color: var(--muted); }
+    .panel.active { display: block; padding-bottom: 24px; }
 
     /* Cards de lista: mobile-first (sempre cards no mobile) */
     .list-cards { display: flex; flex-direction: column; gap: 10px; }
@@ -217,39 +186,16 @@
     /* Badge status */
     .badge {
       display: inline-block;
-      padding: 4px 10px;
+      padding: 4px 8px;
       border-radius: 6px;
       font-size: 0.75rem;
       font-weight: 500;
     }
-    .badge-received, .badge-confirmed, .badge-preparing { background: var(--warning-soft); color: var(--warning); }
-    .badge-shipped, .badge-in-transit { background: var(--info-soft); color: var(--info); }
-    .badge-delivered { background: var(--success-soft); color: var(--success); }
-    .badge-cancelled { background: var(--error-soft); color: var(--error); }
-
-    /* Drawer */
-    .drawer-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 90; opacity: 0; visibility: hidden; transition: opacity .2s, visibility .2s; }
-    .drawer-overlay.open { opacity: 1; visibility: visible; }
-    .drawer {
-      position: fixed; top: 0; right: 0; width: 100%; max-width: 440px; height: 100%; background: var(--surface); border-left: 1px solid var(--border); z-index: 91;
-      transform: translateX(100%); transition: transform .25s ease; overflow-y: auto; display: flex; flex-direction: column; box-shadow: -8px 0 32px rgba(0,0,0,0.3);
-    }
-    .drawer.open { transform: translateX(0); }
-    .drawer-header { padding: 20px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-shrink: 0; }
-    .drawer-header h2 { margin: 0; font-size: 1.15rem; font-weight: 600; }
-    .drawer-close { width: 36px; height: 36px; border: none; border-radius: var(--radius-sm); background: transparent; color: var(--text-2); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; transition: background .15s, color .15s; }
-    .drawer-close:hover { background: var(--surface-hover); color: var(--text); }
-    .drawer-body { flex: 1; padding: 24px; overflow-y: auto; }
-
-    /* Confirm modal */
-    .confirm-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 110; display: none; align-items: center; justify-content: center; padding: 16px; }
-    .confirm-overlay.open { display: flex; }
-    .confirm-modal { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; max-width: 400px; width: 100%; }
-    .confirm-modal h3 { margin: 0 0 8px; font-size: 1.1rem; }
-    .confirm-modal p { margin: 0 0 20px; color: var(--text-2); font-size: 0.9rem; }
-    .confirm-actions { display: flex; gap: 12px; justify-content: flex-end; }
-    .confirm-actions .btn-danger { background: var(--error); color: #fff; }
-    .confirm-actions .btn-danger:hover:not(:disabled) { background: #dc2626; }
+    /* Status: early → amarelo, entregue → verde, cancelado → vermelho, envio → âmbar */
+    .badge-received, .badge-confirmed, .badge-preparing { background: rgba(212, 168, 43, 0.35); color: #e0b83d; }
+    .badge-shipped, .badge-in-transit { background: rgba(230, 81, 0, 0.25); color: #ffb74d; }
+    .badge-delivered { background: var(--success-soft); color: #81c784; }
+    .badge-cancelled { background: var(--error-soft); color: #e57373; }
 
     .empty { text-align: center; padding: 40px 20px; color: var(--muted); font-size: 0.95rem; }
 
@@ -353,68 +299,27 @@
   </style>
 </head>
 <body>
-  <div class="app-shell">
-    <aside class="sidebar" id="sidebar">
-      <div class="sidebar-logo">
-        <span>Artilheiro</span>
+  <div class="layout">
+    <header>
+      <h1>Artilheiro Admin</h1>
+    </header>
+
+    <div class="tabs" role="tablist">
+      <button type="button" class="tab-btn active" data-panel="pedidos" role="tab" aria-selected="true">Pedidos</button>
+      <button type="button" class="tab-btn" data-panel="produtos" role="tab" aria-selected="false">Produtos</button>
+    </div>
+
+    <div id="panel-pedidos" class="panel active" role="tabpanel">
+      <div class="section-top">
+        <h2>Pedidos</h2>
       </div>
-      <nav class="sidebar-nav">
-        <a href="#" class="nav-link active" data-panel="dashboard"><span class="nav-icon">◉</span><span>Dashboard</span></a>
-        <a href="#" class="nav-link" data-panel="pedidos"><span class="nav-icon">📋</span><span>Pedidos</span></a>
-        <a href="#" class="nav-link" data-panel="produtos"><span class="nav-icon">📦</span><span>Produtos</span></a>
-      </nav>
-      <div class="sidebar-toggle">
-        <button type="button" id="sidebar-toggle-btn" aria-label="Recolher menu"><span>◀</span></button>
-      </div>
-    </aside>
-    <div class="main-wrap">
-      <header class="topbar">
-        <div class="topbar-search">
-          <input type="search" id="global-search" placeholder="Buscar pedidos, produtos..." aria-label="Busca global" />
-        </div>
-        <div class="topbar-actions">
-          <button type="button" class="btn btn-primary btn-sm" id="topbar-criar-produto" style="display: none;">+ Criar produto</button>
-          <div class="topbar-profile" title="Admin">A</div>
-        </div>
-      </header>
-      <main class="main-content">
-        <div id="panel-dashboard" class="panel active" role="tabpanel">
-          <h1 class="page-title">Visão geral</h1>
-          <div id="dashboard-kpis" class="kpi-grid"></div>
-          <div id="dashboard-recent"></div>
-        </div>
-        <div id="panel-pedidos" class="panel" role="tabpanel" hidden>
-          <div class="section-top">
-            <h1 class="page-title">Pedidos</h1>
-          </div>
-          <div id="pedidos-list"></div>
-        </div>
-        <div id="panel-produtos" class="panel" role="tabpanel" hidden>
-      <div class="section-top" style="margin-bottom: 20px;">
-        <h1 class="page-title">Produtos</h1>
+      <div id="pedidos-list"></div>
+    </div>
+
+    <div id="panel-produtos" class="panel" role="tabpanel" hidden>
+      <div class="section-top">
+        <h2>Produtos</h2>
         <button type="button" class="btn btn-primary" id="btn-novo-produto">+ Novo</button>
-      </div>
-      <div class="products-toolbar" style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 16px;">
-        <input type="search" id="products-search" placeholder="Buscar por nome, time, categoria..." style="min-width: 220px; min-height: 40px; padding: 0 12px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text);" />
-        <select id="products-filter-category" style="min-height: 40px; padding: 0 12px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text);">
-          <option value="">Todas categorias</option>
-        </select>
-        <select id="products-filter-status" style="min-height: 40px; padding: 0 12px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text);">
-          <option value="">Todos</option>
-          <option value="active">Ativos</option>
-          <option value="inactive">Inativos</option>
-        </select>
-        <label style="display: flex; align-items: center; gap: 8px; color: var(--text-2); font-size: 0.9rem;"><input type="checkbox" id="products-filter-lowstock" /> Estoque baixo</label>
-        <select id="products-sort" style="min-height: 40px; padding: 0 12px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text);">
-          <option value="name">Nome</option>
-          <option value="price">Preço</option>
-          <option value="stock">Estoque</option>
-        </select>
-      </div>
-      <div id="products-bulk-bar" style="display: none; padding: 12px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); margin-bottom: 16px; align-items: center; gap: 12px; flex-wrap: wrap; flex-direction: row;">
-        <span id="products-bulk-count">0 selecionados</span>
-        <button type="button" class="btn btn-sm btn-secondary" id="bulk-ativar">Ativar</button>
-        <button type="button" class="btn btn-sm btn-secondary" id="bulk-desativar">Desativar</button>
       </div>
       <div id="produtos-list"></div>
       <div class="form-card" id="card-form-produto" style="display: none;">
@@ -476,83 +381,65 @@
         <div id="msg-produto"></div>
       </div>
     </div>
-      </main>
-    </div>
-  </div>
 
-  <!-- Drawer Pedido -->
-  <div id="drawer-pedido-overlay" class="drawer-overlay" aria-hidden="true"></div>
-  <div id="drawer-pedido" class="drawer" role="dialog" aria-label="Detalhe do pedido">
-    <div class="drawer-header">
-      <h2>Pedido <span id="drawer-pedido-codigo"></span></h2>
-      <button type="button" class="drawer-close" id="drawer-pedido-close" aria-label="Fechar">×</button>
-    </div>
-    <div class="drawer-body">
-      <div class="detail-header" style="margin-bottom: 16px;">
-        <span id="drawer-pedido-status-badge" class="badge"></span>
-      </div>
-      <div id="drawer-pedido-itens" class="detail-block">
-        <div class="detail-block-title">Itens do pedido</div>
-        <div id="drawer-pedido-itens-list"></div>
-      </div>
-      <div class="detail-block">
-        <div class="detail-block-title">Resumo financeiro</div>
-        <div class="detail-summary" id="drawer-pedido-total"></div>
-      </div>
-      <form id="form-pedido">
-        <div class="detail-block">
-          <div class="detail-block-title">Alterar status e envio</div>
-          <input type="hidden" id="pedido-id" />
-          <div class="field">
-            <label for="pedido-status">Status</label>
-            <select id="pedido-status" name="status">
-              <option value="RECEIVED">Recebido</option>
-              <option value="CONFIRMED">Confirmado</option>
-              <option value="PREPARING">Em preparação</option>
-              <option value="SHIPPED">Enviado</option>
-              <option value="IN_TRANSIT">Em trânsito</option>
-              <option value="DELIVERED">Entregue</option>
-              <option value="CANCELLED">Cancelado</option>
-            </select>
+    <div id="modal-pedido" class="modal-overlay" aria-hidden="true">
+      <div class="modal">
+        <div class="detail-header">
+          <h3>Pedido <span id="modal-pedido-codigo"></span></h3>
+          <span id="modal-pedido-status-badge" class="badge"></span>
+        </div>
+        <div id="modal-pedido-content">
+          <div class="detail-block" id="modal-pedido-itens">
+            <div class="detail-block-title">Itens do pedido</div>
+            <div id="modal-pedido-itens-list"></div>
           </div>
-          <div class="field">
-            <label for="pedido-shippedAt">Data de envio</label>
-            <input type="datetime-local" id="pedido-shippedAt" name="shippedAt" />
-          </div>
-          <div class="field">
-            <label for="pedido-carrier">Transportadora</label>
-            <input type="text" id="pedido-carrier" name="carrier" placeholder="Ex: Correios" />
-          </div>
-          <div class="field">
-            <label for="pedido-trackingCode">Código de rastreio</label>
-            <input type="text" id="pedido-trackingCode" name="trackingCode" placeholder="Ex: BR123456789" />
-          </div>
-          <div class="field">
-            <label for="pedido-trackingUrl">Link de rastreio</label>
-            <input type="text" id="pedido-trackingUrl" name="trackingUrl" placeholder="https://..." inputmode="url" />
-          </div>
-          <div class="form-actions">
-            <button type="button" class="btn btn-secondary" id="btn-fechar-pedido">Fechar</button>
-            <button type="submit" class="btn btn-primary">Salvar alterações</button>
+          <div class="detail-block">
+            <div class="detail-block-title">Resumo financeiro</div>
+            <div class="detail-summary" id="modal-pedido-total"></div>
           </div>
         </div>
-      </form>
-      <div id="msg-pedido"></div>
-    </div>
-  </div>
-
-  <!-- Confirm modal -->
-  <div id="confirm-overlay" class="confirm-overlay">
-    <div class="confirm-modal">
-      <h3 id="confirm-title">Confirmar ação</h3>
-      <p id="confirm-message">Essa ação não pode ser desfeita.</p>
-      <div class="confirm-actions">
-        <button type="button" class="btn btn-secondary" id="confirm-cancel">Cancelar</button>
-        <button type="button" class="btn btn-danger" id="confirm-ok">Confirmar</button>
+        <form id="form-pedido">
+          <div class="detail-block">
+            <div class="detail-block-title">Alterar status e envio</div>
+            <input type="hidden" id="pedido-id" />
+            <div class="field">
+              <label for="pedido-status">Status</label>
+              <select id="pedido-status" name="status">
+                <option value="RECEIVED">Recebido</option>
+                <option value="CONFIRMED">Confirmado</option>
+                <option value="PREPARING">Em preparação</option>
+                <option value="SHIPPED">Enviado</option>
+                <option value="IN_TRANSIT">Em trânsito</option>
+                <option value="DELIVERED">Entregue</option>
+                <option value="CANCELLED">Cancelado</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="pedido-shippedAt">Data de envio</label>
+              <input type="datetime-local" id="pedido-shippedAt" name="shippedAt" />
+            </div>
+            <div class="field">
+              <label for="pedido-carrier">Transportadora</label>
+              <input type="text" id="pedido-carrier" name="carrier" placeholder="Ex: Correios" />
+            </div>
+            <div class="field">
+              <label for="pedido-trackingCode">Código de rastreio</label>
+              <input type="text" id="pedido-trackingCode" name="trackingCode" placeholder="Ex: BR123456789" />
+            </div>
+            <div class="field">
+              <label for="pedido-trackingUrl">Link de rastreio</label>
+              <input type="text" id="pedido-trackingUrl" name="trackingUrl" placeholder="https://..." inputmode="url" />
+            </div>
+            <div class="modal-actions">
+              <button type="button" class="btn btn-secondary" id="btn-fechar-pedido">Fechar</button>
+              <button type="submit" class="btn btn-primary">Salvar alterações</button>
+            </div>
+          </div>
+        </form>
+        <div id="msg-pedido"></div>
       </div>
     </div>
   </div>
-
   <div id="toast-container" class="toast-container" aria-live="polite"></div>
 
   <script>
@@ -613,119 +500,23 @@
       setTimeout(() => toast.remove(), 4000);
     }
 
-    function openConfirm(title, message, onConfirm) {
-      document.getElementById('confirm-title').textContent = title;
-      document.getElementById('confirm-message').textContent = message;
-      document.getElementById('confirm-overlay').classList.add('open');
-      const ok = document.getElementById('confirm-ok');
-      const cancel = document.getElementById('confirm-cancel');
-      const close = () => {
-        document.getElementById('confirm-overlay').classList.remove('open');
-        ok.onclick = null;
-        cancel.onclick = null;
-      };
-      ok.onclick = () => { close(); onConfirm(); };
-      cancel.onclick = close;
-    }
-
     function statusBadgeClass(s) {
       const k = (s || '').toLowerCase().replace('_', '-');
       return 'badge badge-' + (k === 'cancelled' ? 'cancelled' : k === 'delivered' ? 'delivered' : k === 'shipped' || k === 'in-transit' ? 'shipped' : 'received');
     }
 
-    // Dashboard
-    async function loadDashboard() {
-      const el = document.getElementById('dashboard-kpis');
-      el.innerHTML = `
-        <div class="kpi-card"><div class="kpi-icon" style="background:var(--info-soft);">📋</div><div class="kpi-value skeleton" style="height:28px;width:60px;"></div><p class="kpi-label">Total de pedidos</p><p class="kpi-delta neutral">—</p></div>
-        <div class="kpi-card"><div class="kpi-icon" style="background:var(--success-soft);">📅</div><div class="kpi-value skeleton" style="height:28px;width:60px;"></div><p class="kpi-label">Pedidos hoje</p><p class="kpi-delta neutral">—</p></div>
-        <div class="kpi-card"><div class="kpi-icon" style="background:var(--accent-soft);">💰</div><div class="kpi-value skeleton" style="height:28px;width:80px;"></div><p class="kpi-label">Faturamento total</p><p class="kpi-delta neutral">—</p></div>
-        <div class="kpi-card"><div class="kpi-icon" style="background:var(--warning-soft);">📆</div><div class="kpi-value skeleton" style="height:28px;width:80px;"></div><p class="kpi-label">Faturamento hoje</p><p class="kpi-delta neutral">—</p></div>
-        <div class="kpi-card"><div class="kpi-icon" style="background:var(--success-soft);">📦</div><div class="kpi-value skeleton" style="height:28px;width:50px;"></div><p class="kpi-label">Produtos ativos</p><p class="kpi-delta neutral">—</p></div>
-        <div class="kpi-card"><div class="kpi-icon" style="background:var(--error-soft);">⚠</div><div class="kpi-value skeleton" style="height:28px;width:50px;"></div><p class="kpi-label">Sem estoque</p><p class="kpi-delta neutral">—</p></div>
-        <div class="kpi-card"><div class="kpi-icon" style="background:var(--warning-soft);">⏳</div><div class="kpi-value skeleton" style="height:28px;width:50px;"></div><p class="kpi-label">Pedidos pendentes</p><p class="kpi-delta neutral">—</p></div>
-      `;
-      let orders = [], products = [];
-      try {
-        const [rO, rP] = await Promise.all([fetch(API_ORDERS + '/admin'), fetch(API_PRODUCTS + '/admin')]);
-        orders = await rO.json();
-        products = await rP.json();
-      } catch (_) {}
-      const today = new Date().toISOString().slice(0, 10);
-      const ordersToday = orders.filter(o => (o.createdAt || '').toString().slice(0, 10) === today);
-      const totalRevenue = orders.reduce((s, o) => s + Number(o.total || 0), 0);
-      const revenueToday = ordersToday.reduce((s, o) => s + Number(o.total || 0), 0);
-      const activeProducts = products.filter(p => p.active).length;
-      const stockTotal = (p) => !p.sizes || typeof p.sizes !== 'object' ? 0 : Object.values(p.sizes).reduce((a, n) => a + (Number(n) || 0), 0);
-      const outOfStock = products.filter(p => stockTotal(p) === 0).length;
-      const pendingStatuses = ['RECEIVED', 'CONFIRMED', 'PREPARING'];
-      const pendingOrders = orders.filter(o => pendingStatuses.includes((o.status || '').toUpperCase())).length;
-      el.innerHTML = `
-        <div class="kpi-card"><div class="kpi-icon" style="background:var(--info-soft);">📋</div><div class="kpi-value">${orders.length}</div><p class="kpi-label">Total de pedidos</p><p class="kpi-delta neutral">—</p></div>
-        <div class="kpi-card"><div class="kpi-icon" style="background:var(--success-soft);">📅</div><div class="kpi-value">${ordersToday.length}</div><p class="kpi-label">Pedidos hoje</p><p class="kpi-delta neutral">—</p></div>
-        <div class="kpi-card"><div class="kpi-icon" style="background:var(--accent-soft);">💰</div><div class="kpi-value">${formatPrice(totalRevenue)}</div><p class="kpi-label">Faturamento total</p><p class="kpi-delta neutral">—</p></div>
-        <div class="kpi-card"><div class="kpi-icon" style="background:var(--warning-soft);">📆</div><div class="kpi-value">${formatPrice(revenueToday)}</div><p class="kpi-label">Faturamento hoje</p><p class="kpi-delta neutral">—</p></div>
-        <div class="kpi-card"><div class="kpi-icon" style="background:var(--success-soft);">📦</div><div class="kpi-value">${activeProducts}</div><p class="kpi-label">Produtos ativos</p><p class="kpi-delta neutral">—</p></div>
-        <div class="kpi-card"><div class="kpi-icon" style="background:var(--error-soft);">⚠</div><div class="kpi-value">${outOfStock}</div><p class="kpi-label">Sem estoque</p><p class="kpi-delta neutral">—</p></div>
-        <div class="kpi-card"><div class="kpi-icon" style="background:var(--warning-soft);">⏳</div><div class="kpi-value">${pendingOrders}</div><p class="kpi-label">Pedidos pendentes</p><p class="kpi-delta neutral">—</p></div>
-      `;
-      const recentEl = document.getElementById('dashboard-recent');
-      const recentOrders = [...orders].sort((a,b) => new Date(b.createdAt||0) - new Date(a.createdAt||0)).slice(0, 5);
-      if (recentOrders.length) {
-        recentEl.innerHTML = `<div class="detail-block"><div class="detail-block-title">Últimos pedidos</div><div class="table-wrap"><table><thead><tr><th>Código</th><th>Data</th><th>Total</th><th>Status</th><th></th></tr></thead><tbody>${recentOrders.map(o => `<tr data-id="${o.id}" role="button" tabindex="0"><td class="order-code-cell">${escapeHtml(o.orderCode)}</td><td>${formatDate(o.createdAt)}</td><td>${formatPrice(o.total)}</td><td><span class="${statusBadgeClass(o.status)}">${escapeHtml(o.status)}</span></td><td><button type="button" class="btn btn-secondary btn-sm btn-open-order" data-id="${o.id}">Ver</button></td></tr>`).join('')}</tbody></table></div></div>`;
-        recentEl.querySelectorAll('.btn-open-order').forEach(b => b.addEventListener('click', (e) => { e.stopPropagation(); const o = orders.find(x => x.id === b.dataset.id); if (o) openOrderDrawer(o); }));
-        recentEl.querySelectorAll('tbody tr').forEach(tr => tr.addEventListener('click', (e) => { if (e.target.closest('button')) return; const o = orders.find(x => x.id === tr.dataset.id); if (o) openOrderDrawer(o); }));
-      } else recentEl.innerHTML = '<p class="empty">Nenhum pedido recente.</p>';
-    }
-
     // Tabs
-    let currentPanel = 'dashboard';
-    document.querySelectorAll('.nav-link').forEach(link => {
-      link.addEventListener('click', (e) => {
-        e.preventDefault();
-        const panel = link.dataset.panel;
-        if (!panel) return;
-        currentPanel = panel;
-        document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-        link.classList.add('active');
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => { b.classList.remove('active'); b.setAttribute('aria-selected', 'false'); });
         document.querySelectorAll('.panel').forEach(p => { p.classList.remove('active'); p.setAttribute('hidden', ''); });
-        const panelEl = document.getElementById('panel-' + panel);
-        if (panelEl) { panelEl.classList.add('active'); panelEl.removeAttribute('hidden'); }
-        document.getElementById('topbar-criar-produto').style.display = panel === 'produtos' ? '' : 'none';
-        if (panel === 'dashboard') loadDashboard();
-        if (panel === 'pedidos') loadPedidos();
-        if (panel === 'produtos') loadProdutos();
-      });
-    });
-    document.getElementById('sidebar-toggle-btn').addEventListener('click', () => {
-      document.getElementById('sidebar').classList.toggle('collapsed');
-      document.getElementById('sidebar-toggle-btn').querySelector('span').textContent = document.getElementById('sidebar').classList.contains('collapsed') ? '▶' : '◀';
-    });
-    document.getElementById('bulk-ativar').addEventListener('click', async () => {
-      const ids = [...productSelectedIds];
-      const fakeBtn = { disabled: false };
-      for (const id of ids) {
-        const p = allProductsList.find(x => x.id === id);
-        if (p && !p.active) await toggleProductActive(p, fakeBtn);
-      }
-      productSelectedIds.clear();
-      updateProductsBulkBar();
-      loadProdutos();
-    });
-    document.getElementById('bulk-desativar').addEventListener('click', () => {
-      const n = productSelectedIds.size;
-      if (!n) return;
-      openConfirm('Desativar ' + n + ' produto(s)?', 'Os produtos ficarão indisponíveis na loja. Você pode reativá-los depois.', async () => {
-        const ids = [...productSelectedIds];
-        const fakeBtn = { disabled: false };
-        for (const id of ids) {
-          const p = allProductsList.find(x => x.id === id);
-          if (p && p.active) await toggleProductActive(p, fakeBtn);
-        }
-        productSelectedIds.clear();
-        updateProductsBulkBar();
-        loadProdutos();
-        showToast(n + ' produto(s) desativado(s).', 'success');
+        btn.classList.add('active');
+        btn.setAttribute('aria-selected', 'true');
+        const panel = document.getElementById('panel-' + btn.dataset.panel);
+        panel.classList.add('active');
+        panel.removeAttribute('hidden');
+        if (btn.dataset.panel === 'pedidos') loadPedidos();
+        if (btn.dataset.panel === 'produtos') loadProdutos();
       });
     });
 
@@ -763,35 +554,26 @@
       btnEl.disabled = false;
     }
 
-    let allProductsList = [];
-    let productSelectedIds = new Set();
-
-    function applyProductsFilter() {
-      const q = (document.getElementById('products-search')?.value || '').toLowerCase().trim();
-      const cat = (document.getElementById('products-filter-category')?.value || '').toLowerCase();
-      const statusFilter = document.getElementById('products-filter-status')?.value || '';
-      const lowOnly = document.getElementById('products-filter-lowstock')?.checked || false;
-      const sortBy = document.getElementById('products-sort')?.value || 'name';
-      let list = allProductsList.filter(p => {
-        if (q && !(p.name||'').toLowerCase().includes(q) && !(p.team||'').toLowerCase().includes(q) && !(p.category||'').toLowerCase().includes(q)) return false;
-        if (cat && (p.category||'').toLowerCase() !== cat) return false;
-        if (statusFilter === 'active' && !p.active) return false;
-        if (statusFilter === 'inactive' && p.active) return false;
-        if (lowOnly && productStockTotal(p) > 2) return false;
-        return true;
-      });
-      list = [...list].sort((a, b) => {
-        if (sortBy === 'price') return Number(a.price||0) - Number(b.price||0);
-        if (sortBy === 'stock') return productStockTotal(a) - productStockTotal(b);
-        return (a.name||'').localeCompare(b.name||'');
-      });
-      renderProdutosList(list);
-    }
-
-    function renderProdutosList(list) {
+    // Produtos
+    async function loadProdutos() {
       const el = document.getElementById('produtos-list');
+      el.innerHTML = `
+        <div class="products-table table-wrap">
+          <table><thead><tr><th></th><th>Nome</th><th>Time</th><th>Categoria</th><th>Preço</th><th>Estoque</th><th>Status</th><th></th></tr></thead>
+          <tbody>
+            ${[1,2,3,4,5].map(() => '<tr class="skeleton-row"><td><span class="skeleton product-thumb"></span></td><td><span class="skeleton"></span></td><td><span class="skeleton"></span></td><td><span class="skeleton"></span></td><td><span class="skeleton"></span></td><td><span class="skeleton"></span></td><td><span class="skeleton"></span></td><td></td></tr>').join('')}
+          </tbody></table>
+        </div>
+      `;
+      let list = [];
+      try {
+        const res = await fetch(API_PRODUCTS + '/admin');
+        list = await res.json();
+      } catch (_) {
+        list = [];
+      }
       if (!list.length) {
-        el.innerHTML = '<p class="empty">Nenhum produto encontrado.</p>';
+        el.innerHTML = '<p class="empty">Nenhum produto. Toque em + Novo para cadastrar.</p>';
         return;
       }
       const badge = (p) => p.active ? '<span class="badge badge-delivered">Ativo</span>' : '<span class="badge badge-cancelled">Inativo</span>';
@@ -800,16 +582,14 @@
         <div class="products-cards list-cards">
           ${list.map(p => {
             const stock = productStockTotal(p);
-            const checked = productSelectedIds.has(p.id) ? ' checked' : '';
             return `
-            <div class="card-row" role="button" tabindex="0" data-id="${p.id}">
-              <label onclick="event.stopPropagation()"><input type="checkbox" class="product-row-cb" data-id="${p.id}"${checked} /> </label>
+            <div class="card-row" role="button" tabindex="0" data-id="${p.id}" aria-label="Editar ${escapeHtml(p.name)}">
               <div class="card-row-main">
                 <p class="card-row-title">${escapeHtml(p.name)} · ${escapeHtml(p.team)}</p>
                 <p class="card-row-meta">${escapeHtml(p.category)} · ${formatPrice(p.price)} · Estoque: ${stock}${stock <= 2 ? ' (baixo)' : ''} · ${badge(p)}</p>
               </div>
               <div class="card-row-actions">
-                <button type="button" class="btn btn-sm ${p.active ? 'btn-secondary' : 'btn-primary'} btn-toggle-product" data-id="${p.id}">${p.active ? 'Desativar' : 'Ativar'}</button>
+                <button type="button" class="btn btn-sm ${p.active ? 'btn-secondary btn-toggle-product' : 'btn-primary btn-toggle-product'}" data-id="${p.id}" data-active="${p.active}" aria-label="${p.active ? 'Desativar' : 'Ativar'}">${p.active ? 'Desativar' : 'Ativar'}</button>
                 <button type="button" class="btn btn-secondary btn-sm btn-edit-produto" data-id="${p.id}">Editar</button>
               </div>
             </div>`;
@@ -817,15 +597,13 @@
         </div>
         <div class="products-table table-wrap">
           <table>
-            <thead><tr><th><input type="checkbox" id="product-select-all" aria-label="Selecionar todos" /></th><th></th><th>Nome</th><th>Time</th><th>Categoria</th><th>Preço</th><th>Estoque</th><th>Status</th><th></th></tr></thead>
+            <thead><tr><th></th><th>Nome</th><th>Time</th><th>Categoria</th><th>Preço</th><th>Estoque</th><th>Status</th><th></th></tr></thead>
             <tbody>
               ${list.map(p => {
                 const stock = productStockTotal(p);
                 const lowClass = stock <= 2 ? ' stock-low' : '';
-                const checked = productSelectedIds.has(p.id) ? ' checked' : '';
                 return `
                 <tr role="button" tabindex="0" data-id="${p.id}">
-                  <td onclick="event.stopPropagation()"><input type="checkbox" class="product-row-cb" data-id="${p.id}"${checked} /></td>
                   <td>${thumb(p)}</td>
                   <td>${escapeHtml(p.name)}</td>
                   <td>${escapeHtml(p.team)}</td>
@@ -834,7 +612,7 @@
                   <td class="${lowClass}">${stock}</td>
                   <td>${badge(p)}</td>
                   <td class="cell-actions">
-                    <button type="button" class="btn btn-sm ${p.active ? 'btn-secondary' : 'btn-primary'} btn-toggle-product" data-id="${p.id}">${p.active ? 'Desativar' : 'Ativar'}</button>
+                    <button type="button" class="btn btn-sm ${p.active ? 'btn-secondary' : 'btn-primary'} btn-toggle-product" data-id="${p.id}" data-active="${p.active}" aria-label="${p.active ? 'Desativar' : 'Ativar'}">${p.active ? 'Desativar' : 'Ativar'}</button>
                     <button type="button" class="btn btn-secondary btn-sm btn-edit-produto" data-id="${p.id}">Editar</button>
                   </td>
                 </tr>`;
@@ -844,73 +622,28 @@
         </div>
       `;
       const openProduct = (id) => {
-        const p = allProductsList.find(x => x.id === id);
+        const p = list.find(x => x.id === id);
         if (p) openEditProduto(p);
       };
       el.querySelectorAll('.btn-edit-produto').forEach(b => {
         b.addEventListener('click', (e) => { e.stopPropagation(); openProduct(b.dataset.id); });
       });
       el.querySelectorAll('.btn-toggle-product').forEach(b => {
-        b.addEventListener('click', (e) => { e.stopPropagation(); const p = allProductsList.find(x => x.id === b.dataset.id); if (p) toggleProductActive(p, b); });
-      });
-      el.querySelectorAll('.product-row-cb').forEach(cb => {
-        cb.addEventListener('change', () => {
-          if (cb.checked) productSelectedIds.add(cb.dataset.id); else productSelectedIds.delete(cb.dataset.id);
-          updateProductsBulkBar();
+        b.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const p = list.find(x => x.id === b.dataset.id);
+          if (!p) return;
+          toggleProductActive(p, b);
         });
       });
-      const selectAll = document.getElementById('product-select-all');
-      if (selectAll) {
-        selectAll.checked = list.length > 0 && list.every(p => productSelectedIds.has(p.id));
-        selectAll.addEventListener('change', () => {
-          list.forEach(p => { if (selectAll.checked) productSelectedIds.add(p.id); else productSelectedIds.delete(p.id); });
-          el.querySelectorAll('.product-row-cb').forEach(c => { c.checked = selectAll.checked; });
-          updateProductsBulkBar();
-        });
-      }
       el.querySelectorAll('.card-row[data-id]').forEach(row => {
-        row.addEventListener('click', (e) => { if (!e.target.closest('label') && !e.target.closest('button')) openProduct(row.dataset.id); });
+        row.addEventListener('click', () => openProduct(row.dataset.id));
+        row.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openProduct(row.dataset.id); } });
       });
       el.querySelectorAll('.products-table tbody tr[data-id]').forEach(row => {
-        row.addEventListener('click', (e) => { if (!e.target.closest('td')?.querySelector('input[type=checkbox]') && !e.target.closest('button')) openProduct(row.dataset.id); });
+        row.addEventListener('click', (e) => { if (!e.target.closest('button')) openProduct(row.dataset.id); });
+        row.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openProduct(row.dataset.id); } });
       });
-    }
-
-    function updateProductsBulkBar() {
-      const bar = document.getElementById('products-bulk-bar');
-      const countEl = document.getElementById('products-bulk-count');
-      const n = productSelectedIds.size;
-      if (countEl) countEl.textContent = n + ' selecionado' + (n !== 1 ? 's' : '');
-      bar.style.display = n ? 'flex' : 'none';
-    }
-
-    async function loadProdutos() {
-      const el = document.getElementById('produtos-list');
-      el.innerHTML = `<div class="products-table table-wrap"><table><thead><tr><th></th><th>Nome</th><th>Time</th><th>Categoria</th><th>Preço</th><th>Estoque</th><th>Status</th><th></th></tr></thead><tbody>${[1,2,3,4,5].map(() => '<tr class="skeleton-row"><td></td><td><span class="skeleton product-thumb"></span></td><td><span class="skeleton"></span></td><td><span class="skeleton"></span></td><td><span class="skeleton"></span></td><td><span class="skeleton"></span></td><td><span class="skeleton"></span></td><td><span class="skeleton"></span></td><td></td></tr>').join('')}</tbody></table></div>`;
-      try {
-        const res = await fetch(API_PRODUCTS + '/admin');
-        allProductsList = await res.json();
-      } catch (_) {
-        allProductsList = [];
-      }
-      const catSelect = document.getElementById('products-filter-category');
-      if (catSelect) {
-        const cats = [...new Set(allProductsList.map(p => p.category).filter(Boolean))].sort();
-        catSelect.innerHTML = '<option value="">Todas categorias</option>' + cats.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
-      }
-      if (!window._productsFilterBound) {
-        window._productsFilterBound = true;
-        document.getElementById('products-search').addEventListener('input', applyProductsFilter);
-        document.getElementById('products-filter-category').addEventListener('change', applyProductsFilter);
-        document.getElementById('products-filter-status').addEventListener('change', applyProductsFilter);
-        document.getElementById('products-filter-lowstock').addEventListener('change', applyProductsFilter);
-        document.getElementById('products-sort').addEventListener('change', applyProductsFilter);
-      }
-      if (!allProductsList.length) {
-        el.innerHTML = '<p class="empty">Nenhum produto. Use + Novo ou Criar produto para cadastrar.</p>';
-        return;
-      }
-      applyProductsFilter();
     }
 
     let productCarouselIndex = 0;
@@ -973,7 +706,7 @@
       document.getElementById('card-form-produto').scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
-    function openNewProductForm() {
+    document.getElementById('btn-novo-produto').addEventListener('click', () => {
       document.getElementById('form-produto-title').textContent = 'Novo produto';
       document.getElementById('form-produto').reset();
       document.getElementById('produto-id').value = '';
@@ -982,9 +715,7 @@
       document.getElementById('card-form-produto').style.display = 'block';
       document.getElementById('msg-produto').textContent = '';
       document.getElementById('card-form-produto').scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-    document.getElementById('btn-novo-produto').addEventListener('click', openNewProductForm);
-    document.getElementById('topbar-criar-produto').addEventListener('click', () => { if (currentPanel !== 'produtos') { document.querySelector('.nav-link[data-panel="produtos"]').click(); setTimeout(openNewProductForm, 100); } else openNewProductForm(); });
+    });
 
     document.getElementById('carousel-prev').addEventListener('click', () => {
       if (productCarouselImages.length) goCarousel(productCarouselIndex - 1);
@@ -1117,7 +848,7 @@
       `;
       const openOrder = (id) => {
         const o = list.find(x => x.id === id);
-        if (o) openOrderDrawer(o);
+        if (o) openModalPedido(o);
       };
       el.querySelectorAll('.btn-gerir-pedido').forEach(b => {
         b.addEventListener('click', (e) => { e.stopPropagation(); openOrder(b.dataset.id); });
@@ -1138,9 +869,9 @@
       });
     }
 
-    function openOrderDrawer(o) {
-      document.getElementById('drawer-pedido-codigo').textContent = o.orderCode;
-      const badgeEl = document.getElementById('drawer-pedido-status-badge');
+    function openModalPedido(o) {
+      document.getElementById('modal-pedido-codigo').textContent = o.orderCode;
+      const badgeEl = document.getElementById('modal-pedido-status-badge');
       badgeEl.textContent = o.status || 'RECEIVED';
       badgeEl.className = 'badge ' + statusBadgeClass(o.status);
       document.getElementById('pedido-id').value = o.id;
@@ -1151,27 +882,29 @@
       document.getElementById('pedido-trackingUrl').value = o.trackingUrl || '';
       document.getElementById('msg-pedido').textContent = '';
       const items = o.items || [];
-      document.getElementById('drawer-pedido-itens-list').innerHTML = items.length ? items.map(it => {
+      document.getElementById('modal-pedido-itens-list').innerHTML = items.length ? items.map(it => {
         const img = (it.image || (it.images && it.images[0])) ? `<img class="detail-item-thumb" src="${escapeHtml(it.image || it.images[0])}" alt="" loading="lazy">` : '<div class="detail-item-thumb" style="background:var(--surface-2)" aria-hidden="true"></div>';
         const name = escapeHtml(it.name || 'Produto');
         const meta = [it.size, 'Qtd: ' + (it.quantity || 0)].filter(Boolean).join(' · ');
         const price = formatPrice(it.price);
         return `<div class="detail-item">${img}<div class="detail-item-body"><p class="detail-item-name">${name}</p><p class="detail-item-meta">${escapeHtml(meta)}</p></div><div class="detail-item-price">${price}</div></div>`;
       }).join('') : '<p class="empty" style="padding:12px 0">Nenhum item.</p>';
-      document.getElementById('drawer-pedido-total').textContent = 'Total: ' + formatPrice(o.total);
-      document.getElementById('drawer-pedido-overlay').classList.add('open');
-      document.getElementById('drawer-pedido').classList.add('open');
-      document.getElementById('drawer-pedido-overlay').setAttribute('aria-hidden', 'false');
-    }
-    function closeOrderDrawer() {
-      document.getElementById('drawer-pedido-overlay').classList.remove('open');
-      document.getElementById('drawer-pedido').classList.remove('open');
-      document.getElementById('drawer-pedido-overlay').setAttribute('aria-hidden', 'true');
+      document.getElementById('modal-pedido-total').textContent = 'Total: ' + formatPrice(o.total);
+      document.getElementById('modal-pedido').classList.add('open');
+      document.getElementById('modal-pedido').setAttribute('aria-hidden', 'false');
     }
 
-    document.getElementById('btn-fechar-pedido').addEventListener('click', closeOrderDrawer);
-    document.getElementById('drawer-pedido-close').addEventListener('click', closeOrderDrawer);
-    document.getElementById('drawer-pedido-overlay').addEventListener('click', closeOrderDrawer);
+    document.getElementById('btn-fechar-pedido').addEventListener('click', () => {
+      document.getElementById('modal-pedido').classList.remove('open');
+      document.getElementById('modal-pedido').setAttribute('aria-hidden', 'true');
+    });
+
+    document.getElementById('modal-pedido').addEventListener('click', (e) => {
+      if (e.target.id === 'modal-pedido') {
+        e.target.classList.remove('open');
+        e.target.setAttribute('aria-hidden', 'true');
+      }
+    });
 
     document.getElementById('form-pedido').addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -1198,8 +931,10 @@
           submitBtn.disabled = false;
           submitBtn.textContent = 'Salvar alterações';
           loadPedidos();
-          if (currentPanel === 'dashboard') loadDashboard();
-          setTimeout(closeOrderDrawer, 600);
+          setTimeout(() => {
+            document.getElementById('modal-pedido').classList.remove('open');
+            document.getElementById('modal-pedido').setAttribute('aria-hidden', 'true');
+          }, 600);
         } else {
           const data = await res.json().catch(() => ({}));
           msgEl.textContent = data.message || 'Erro ao atualizar. Tente novamente.';
@@ -1215,7 +950,7 @@
       submitBtn.textContent = 'Salvar alterações';
     });
 
-    loadDashboard();
+    loadPedidos();
   </script>
 </body>
 </html>

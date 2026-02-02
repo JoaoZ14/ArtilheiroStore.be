@@ -6,7 +6,9 @@ import com.artilheiro.store.dto.order.OrderRequest;
 import com.artilheiro.store.dto.order.OrderResponse;
 import com.artilheiro.store.dto.order.OrderUpdateRequest;
 import com.artilheiro.store.model.Order;
+import com.artilheiro.store.model.Product;
 import com.artilheiro.store.repository.OrderRepository;
+import com.artilheiro.store.repository.ProductRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,6 +16,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,9 +29,11 @@ public class OrderService {
     private static final String ORDER_PREFIX = "ART-";
 
     private final OrderRepository orderRepository;
+    private final ProductRepository productRepository;
 
-    public OrderService(OrderRepository orderRepository) {
+    public OrderService(OrderRepository orderRepository, ProductRepository productRepository) {
         this.orderRepository = orderRepository;
+        this.productRepository = productRepository;
     }
 
     public OrderResponse create(OrderRequest request) {
@@ -110,12 +115,29 @@ public class OrderService {
     }
 
     private OrderLookupItemResponse toLookupItemResponse(Map<String, Object> map) {
+        String productId = map.get("productId") != null ? map.get("productId").toString() : null;
         String name = map.get("name") != null ? map.get("name").toString() : null;
         String image = map.get("image") != null ? map.get("image").toString() : null;
+        List<String> images = toImagesList(map.get("images"));
+        String team = map.get("team") != null ? map.get("team").toString() : null;
+        String liga = map.get("liga") != null ? map.get("liga").toString() : null;
+        String category = map.get("category") != null ? map.get("category").toString() : null;
         String size = map.get("size") != null ? map.get("size").toString() : null;
         Integer quantity = toInteger(map.get("quantity"));
         BigDecimal price = toBigDecimal(map.get("unitPrice"));
-        return new OrderLookupItemResponse(name, image, size, quantity, price);
+        return new OrderLookupItemResponse(productId, name, image, images, team, liga, category, size, quantity, price);
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<String> toImagesList(Object value) {
+        if (value == null) return null;
+        if (value instanceof List<?> list) {
+            return list.stream()
+                    .filter(e -> e != null)
+                    .map(Object::toString)
+                    .toList();
+        }
+        return null;
     }
 
     private Integer toInteger(Object value) {
@@ -163,13 +185,28 @@ public class OrderService {
         List<Map<String, Object>> list = new ArrayList<>();
         for (OrderRequest.ItemDto item : items) {
             Map<String, Object> map = new HashMap<>();
-            map.put("productId", item.getProductId());
-            if (item.getName() != null) {
-                map.put("name", item.getName());
-            }
+            String productIdStr = item.getProductId();
+            map.put("productId", productIdStr);
             map.put("size", item.getSize());
             map.put("quantity", item.getQuantity());
             map.put("unitPrice", item.getUnitPrice());
+
+            try {
+                UUID productId = UUID.fromString(productIdStr);
+                productRepository.findById(productId).ifPresent(product -> {
+                    map.put("name", product.getName());
+                    List<String> images = product.getImages() != null ? product.getImages() : Collections.emptyList();
+                    map.put("images", images);
+                    if (!images.isEmpty()) {
+                        map.put("image", images.get(0));
+                    }
+                    map.put("team", product.getTeam());
+                    map.put("liga", product.getLiga());
+                    map.put("category", product.getCategory());
+                });
+            } catch (IllegalArgumentException ignored) {
+                // productId inválido: mantém só os dados enviados
+            }
             list.add(map);
         }
         return list;

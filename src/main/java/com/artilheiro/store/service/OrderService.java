@@ -5,7 +5,12 @@ import com.artilheiro.store.dto.order.OrderLookupResponse;
 import com.artilheiro.store.dto.order.OrderRequest;
 import com.artilheiro.store.dto.order.OrderResponse;
 import com.artilheiro.store.dto.order.OrderUpdateRequest;
+import com.artilheiro.store.dto.order.PaymentCreateRequest;
+import com.artilheiro.store.dto.order.PaymentCreateResponse;
 import com.mercadopago.resources.payment.Payment;
+import com.mercadopago.resources.payment.PaymentPointOfInteraction;
+import com.mercadopago.resources.payment.PaymentTransactionData;
+import com.mercadopago.resources.payment.PaymentTransactionDetails;
 import com.artilheiro.store.model.Order;
 import com.artilheiro.store.model.Product;
 import com.artilheiro.store.repository.OrderRepository;
@@ -42,8 +47,12 @@ public class OrderService {
         this.mercadoPagoService = mercadoPagoService;
     }
 
+    /**
+     * Cria apenas o pedido (Checkout Transparente).
+     * O frontend deve depois chamar POST /api/orders/{orderId}/payments com o token do cartão.
+     */
     @Transactional
-    public OrderResponse create(OrderRequest request) throws MPException, MPApiException {
+    public OrderResponse create(OrderRequest request) {
         Order order = new Order();
         order.setId(UUID.randomUUID());
         order.setOrderNumber(generateOrderNumber());
@@ -59,23 +68,129 @@ public class OrderService {
 
         orderRepository.save(order);
 
-        MercadoPagoService.PreferenceResult preference = mercadoPagoService.createPreference(
-                order.getOrderNumber(),
-                order.getItems(),
-                order.getTotal(),
-                order.getEmail(),
-                order.getCustomerName()
-        );
-
-        order.setPaymentPreferenceId(preference.preferenceId());
-        orderRepository.save(order);
-
         return new OrderResponse(
                 order.getOrderNumber(),
                 order.getStatus().name(),
-                preference.checkoutUrl(),
-                preference.preferenceId()
+                null,
+                null
         );
+    }
+
+    /**
+     * Cria o pagamento no Mercado Pago (Checkout Transparente): cartão, PIX ou boleto.
+     */
+    @Transactional
+    public PaymentCreateResponse createPaymentForOrder(String orderNumber, PaymentCreateRequest paymentRequest) throws MPException, MPApiException {
+        Order order = orderRepository.findByOrderNumber(orderNumber)
+                .orElseThrow(() -> new IllegalArgumentException("Pedido não encontrado: " + orderNumber));
+        if (order.getStatus() != Order.OrderStatus.PAYMENT_PENDING) {
+            throw new IllegalStateException("Pedido não está pendente de pagamento: " + orderNumber);
+        }
+
+        PaymentCreateRequest.PayerDto payer = paymentRequest.getPayer();
+        String paymentMethodId = paymentRequest.getPaymentMethodId() != null ? paymentRequest.getPaymentMethodId().trim().toLowerCase() : "";
+        Payment createPayment;
+
+        if ("pix".equals(paymentMethodId)) {
+            createPayment = mercadoPagoService.createPaymentPix(
+                    order.getTotal(),
+                    "Pedido " + order.getOrderNumber(),
+                    order.getOrderNumber(),
+                    payer.getEmail(),
+                    payer.getName(),
+                    payer.getIdentification().getType(),
+                    payer.getIdentification().getNumber()
+            );
+        } else if ("bolbradesco".equals(paymentMethodId)) {
+            PaymentCreateRequest.AddressDto addr = payer.getAddress();
+            if (addr == null) {
+                throw new IllegalArgumentException("Para boleto, payer.address é obrigatório (streetName, streetNumber, zipCode, city, federalUnit).");
+            }
+            createPayment = mercadoPagoService.createPaymentBoleto(
+                    order.getTotal(),
+                    "Pedido " + order.getOrderNumber(),
+                    order.getOrderNumber(),
+                    payer.getEmail(),
+                    payer.getName(),
+                    payer.getIdentification().getType(),
+                    payer.getIdentification().getNumber(),
+                    addr.getStreetName(),
+                    addr.getStreetNumber(),
+                    addr.getZipCode(),
+                    addr.getCity(),
+                    addr.getFederalUnit()
+            );
+        } else {
+            if (paymentRequest.getToken() == null || paymentRequest.getToken().isBlank()) {
+                throw new IllegalArgumentException("Para pagamento com cartão, token é obrigatório.");
+            }
+            int installments = paymentRequest.getInstallments() != null && paymentRequest.getInstallments() >= 1
+                    ? paymentRequest.getInstallments().intValue()
+                    : 1;
+            createPayment = mercadoPagoService.createPayment(
+                    order.getTotal(),
+                    paymentRequest.getToken(),
+                    paymentRequest.getPaymentMethodId(),
+                    installments,
+                    "Pedido " + order.getOrderNumber(),
+                    order.getOrderNumber(),
+                    payer.getEmail(),
+                    payer.getName(),
+                    payer.getIdentification().getType(),
+                    payer.getIdentification().getNumber(),
+                    paymentRequest.getIssuerId()
+            );
+        }
+
+        if ("approved".equals(createPayment.getStatus())) {
+            order.setStatus(Order.OrderStatus.RECEIVED);
+            order.setPaymentId(String.valueOf(createPayment.getId()));
+            orderRepository.save(order);
+        }
+
+        PaymentCreateResponse response = new PaymentCreateResponse(
+                createPayment.getId(),
+                createPayment.getStatus(),
+                createPayment.getStatusDetail() != null ? createPayment.getStatusDetail() : "",
+                order.getOrderNumber()
+        );
+        fillPixAndBoletoResponse(createPayment, response);
+        // Às vezes o create não retorna point_of_interaction; busca o pagamento de novo para obter QR/ticketUrl
+        boolean needsQrOrTicket = "pix".equals(paymentMethodId) || "bolbradesco".equals(paymentMethodId);
+        if (needsQrOrTicket && createPayment.getId() != null
+                && (response.getQrCode() == null && response.getQrCodeBase64() == null && response.getTicketUrl() == null)) {
+            try {
+                Payment fullPayment = mercadoPagoService.getPayment(createPayment.getId());
+                fillPixAndBoletoResponse(fullPayment, response);
+            } catch (Exception ignored) {
+                // mantém a resposta já preenchida
+            }
+        }
+        return response;
+    }
+
+    /** Preenche qrCode, qrCodeBase64 e ticketUrl a partir da resposta do Mercado Pago (PIX e boleto). */
+    private void fillPixAndBoletoResponse(Payment payment, PaymentCreateResponse response) {
+        if (payment == null || response == null) return;
+        PaymentPointOfInteraction poi = payment.getPointOfInteraction();
+        if (poi != null && poi.getTransactionData() != null) {
+            PaymentTransactionData tdata = poi.getTransactionData();
+            if (tdata.getQrCodeBase64() != null && !tdata.getQrCodeBase64().isBlank()) {
+                response.setQrCodeBase64(tdata.getQrCodeBase64());
+            }
+            if (tdata.getQrCode() != null && !tdata.getQrCode().isBlank()) {
+                response.setQrCode(tdata.getQrCode());
+            }
+            if (tdata.getTicketUrl() != null && !tdata.getTicketUrl().isBlank()) {
+                response.setTicketUrl(tdata.getTicketUrl());
+            }
+        }
+        if (response.getTicketUrl() == null || response.getTicketUrl().isBlank()) {
+            PaymentTransactionDetails details = payment.getTransactionDetails();
+            if (details != null && details.getExternalResourceUrl() != null && !details.getExternalResourceUrl().isBlank()) {
+                response.setTicketUrl(details.getExternalResourceUrl());
+            }
+        }
     }
 
     @Transactional(readOnly = true)
@@ -124,6 +239,32 @@ public class OrderService {
                 orderRepository.save(order);
             }
         });
+    }
+
+    /**
+     * Sincroniza o status do pedido com o pagamento no Mercado Pago.
+     * Se o pagamento estiver aprovado e o external_reference bater com o pedido, atualiza para RECEIVED.
+     * Retorna true se o pedido foi atualizado, false caso contrário.
+     */
+    @Transactional
+    public boolean syncOrderPaymentStatus(String orderNumber, Long paymentId) throws MPException, MPApiException {
+        Order order = orderRepository.findByOrderNumber(orderNumber)
+                .orElseThrow(() -> new IllegalArgumentException("Pedido não encontrado: " + orderNumber));
+        if (order.getStatus() == Order.OrderStatus.RECEIVED) {
+            return false;
+        }
+        Payment payment = mercadoPagoService.getPayment(paymentId);
+        if (payment == null || !"approved".equals(payment.getStatus())) {
+            return false;
+        }
+        String externalRef = payment.getExternalReference();
+        if (externalRef == null || !externalRef.trim().equals(orderNumber)) {
+            return false;
+        }
+        order.setStatus(Order.OrderStatus.RECEIVED);
+        order.setPaymentId(String.valueOf(payment.getId()));
+        orderRepository.save(order);
+        return true;
     }
 
     @Transactional

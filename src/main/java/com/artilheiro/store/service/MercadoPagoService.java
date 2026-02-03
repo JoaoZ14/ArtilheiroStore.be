@@ -54,6 +54,23 @@ public class MercadoPagoService {
         if (accessToken != null && !accessToken.isBlank()) {
             MercadoPagoConfig.setAccessToken(accessToken);
         }
+        if (notificationUrl != null && !notificationUrl.isBlank()) {
+            boolean publicUrl = isPublicWebhookUrl(notificationUrl);
+            log.info("Webhook MP: notification-url={} (pública={}). O webhook deve apontar para o BACKEND.", maskUrl(notificationUrl), publicUrl);
+        }
+    }
+
+    private static String maskUrl(String url) {
+        if (url == null || url.length() < 20) return "***";
+        try {
+            int start = url.indexOf("://");
+            if (start > 0) start += 3; else start = 0;
+            int end = url.indexOf("/", start);
+            if (end < 0) end = url.length();
+            return url.substring(0, Math.min(start + 15, end)) + "..." + (end < url.length() ? url.substring(end) : "");
+        } catch (Exception e) {
+            return "***";
+        }
     }
 
     /**

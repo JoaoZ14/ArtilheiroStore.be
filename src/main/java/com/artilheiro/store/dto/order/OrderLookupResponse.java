@@ -6,6 +6,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 public class OrderLookupResponse {
@@ -24,6 +25,15 @@ public class OrderLookupResponse {
     private String carrier;
     private String trackingCode;
     private String trackingUrl;
+
+    private String customerName;
+    private String email;
+    private Map<String, Object> address;
+
+    private String paymentId;
+    private String paymentMethodId;
+    private String paymentMethodName;
+    private String paymentTypeId;
 
     private List<OrderLookupItemResponse> items;
 
@@ -123,5 +133,61 @@ public class OrderLookupResponse {
 
     public void setTrackingUrl(String trackingUrl) {
         this.trackingUrl = trackingUrl;
+    }
+
+    public String getCustomerName() {
+        return customerName;
+    }
+
+    public void setCustomerName(String customerName) {
+        this.customerName = customerName;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public Map<String, Object> getAddress() {
+        return address;
+    }
+
+    public void setAddress(Map<String, Object> address) {
+        this.address = address;
+    }
+
+    public String getPaymentId() {
+        return paymentId;
+    }
+
+    public void setPaymentId(String paymentId) {
+        this.paymentId = paymentId;
+    }
+
+    public String getPaymentMethodId() {
+        return paymentMethodId;
+    }
+
+    public void setPaymentMethodId(String paymentMethodId) {
+        this.paymentMethodId = paymentMethodId;
+    }
+
+    public String getPaymentMethodName() {
+        return paymentMethodName;
+    }
+
+    public void setPaymentMethodName(String paymentMethodName) {
+        this.paymentMethodName = paymentMethodName;
+    }
+
+    public String getPaymentTypeId() {
+        return paymentTypeId;
+    }
+
+    public void setPaymentTypeId(String paymentTypeId) {
+        this.paymentTypeId = paymentTypeId;
     }
 }

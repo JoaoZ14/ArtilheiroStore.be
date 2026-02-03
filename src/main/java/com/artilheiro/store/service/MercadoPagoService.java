@@ -267,6 +267,8 @@ public class MercadoPagoService {
                 : null;
         if (isPublicWebhookUrl(notification)) {
             builder.notificationUrl(notification);
+        } else if (notification != null && !notification.isBlank()) {
+            log.info("PIX: URL de webhook não é pública (localhost?). Status do pedido só será atualizado via GET /api/orders/{{orderNumber}}/sync-payment?paymentId= (polling no front).");
         }
 
         return executePaymentCreate(builder.build());

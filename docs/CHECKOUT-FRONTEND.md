@@ -177,6 +177,8 @@ GET {BASE_URL}/api/orders/{orderId}/sync-payment?paymentId={paymentId}
 - `updated: true` = o pedido foi atualizado para RECEIVED (pago).
 - `updated: false` = o pagamento ainda não está aprovado no MP ou já estava atualizado.
 
+**Recomendação para PIX:** Enquanto o usuário estiver na tela do QR code, faça **polling** desse endpoint a cada 3–5 segundos. Quando `updated: true`, redirecione para a página de sucesso ou atualize o status na tela. Assim o status do pedido muda mesmo em localhost (onde o webhook do MP não é chamado).
+
 Depois disso, use **GET /api/orders/lookup** para mostrar o pedido com status atualizado.
 
 ---

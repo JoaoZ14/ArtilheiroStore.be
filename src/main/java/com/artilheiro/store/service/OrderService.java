@@ -17,6 +17,8 @@ import com.artilheiro.store.repository.OrderRepository;
 import com.artilheiro.store.repository.ProductRepository;
 import com.mercadopago.exceptions.MPApiException;
 import com.mercadopago.exceptions.MPException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,6 +36,7 @@ import java.util.UUID;
 @Service
 public class OrderService {
 
+    private static final Logger log = LoggerFactory.getLogger(OrderService.class);
     private static final String ORDER_PREFIX = "ART-";
 
     private final OrderRepository orderRepository;
@@ -203,7 +206,11 @@ public class OrderService {
     @Transactional(readOnly = true)
     public Optional<OrderLookupResponse> lookupOrder(String email, String code) {
         return orderRepository.findByOrderNumberAndEmailIgnoreCase(code, email)
-                .map(this::toLookupResponse);
+                .map(order -> {
+                    OrderLookupResponse resp = toLookupResponse(order);
+                    enrichWithPaymentInfo(resp, order);
+                    return resp;
+                });
     }
 
     /**
@@ -213,32 +220,44 @@ public class OrderService {
     @Transactional
     public void processMercadoPagoWebhook(String type, String paymentIdStr) throws MPException, MPApiException {
         if (type == null || !"payment".equals(type.trim()) || paymentIdStr == null || paymentIdStr.isBlank()) {
+            log.debug("Webhook MP ignorado: type={}, paymentId={}", type, paymentIdStr);
             return;
         }
         Long paymentId;
         try {
             paymentId = Long.parseLong(paymentIdStr.trim());
         } catch (NumberFormatException e) {
+            log.warn("Webhook MP: payment_id inválido: {}", paymentIdStr);
             return;
         }
         Payment payment = mercadoPagoService.getPayment(paymentId);
         if (payment == null) {
+            log.warn("Webhook MP: pagamento não encontrado: {}", paymentId);
             return;
         }
         if (!"approved".equals(payment.getStatus())) {
+            log.debug("Webhook MP: pagamento {} ainda não aprovado, status={}", paymentId, payment.getStatus());
             return;
         }
         String externalReference = payment.getExternalReference();
         if (externalReference == null || externalReference.isBlank()) {
+            log.warn("Webhook MP: pagamento {} sem external_reference", paymentId);
             return;
         }
-        orderRepository.findByOrderNumber(externalReference.trim()).ifPresent(order -> {
-            if (order.getStatus() == Order.OrderStatus.PAYMENT_PENDING) {
-                order.setStatus(Order.OrderStatus.RECEIVED);
-                order.setPaymentId(String.valueOf(payment.getId()));
-                orderRepository.save(order);
-            }
-        });
+        final String orderNumber = externalReference.trim();
+        orderRepository.findByOrderNumber(orderNumber).ifPresentOrElse(
+                order -> {
+                    if (order.getStatus() == Order.OrderStatus.PAYMENT_PENDING) {
+                        order.setStatus(Order.OrderStatus.RECEIVED);
+                        order.setPaymentId(String.valueOf(payment.getId()));
+                        orderRepository.save(order);
+                        log.info("Webhook MP: pedido {} atualizado para RECEIVED (paymentId={})", orderNumber, paymentId);
+                    } else {
+                        log.debug("Webhook MP: pedido {} já com status {}", orderNumber, order.getStatus());
+                    }
+                },
+                () -> log.warn("Webhook MP: pedido não encontrado: {}", orderNumber)
+        );
     }
 
     /**
@@ -300,7 +319,7 @@ public class OrderService {
         List<OrderLookupItemResponse> items = orderItems.stream()
                 .map(this::toLookupItemResponse)
                 .toList();
-        return new OrderLookupResponse(
+        OrderLookupResponse resp = new OrderLookupResponse(
                 order.getId(),
                 order.getOrderNumber(),
                 order.getStatus().name(),
@@ -312,6 +331,52 @@ public class OrderService {
                 order.getTrackingUrl(),
                 items
         );
+        resp.setCustomerName(order.getCustomerName());
+        resp.setEmail(order.getEmail());
+        resp.setAddress(order.getAddress());
+        resp.setPaymentId(order.getPaymentId());
+        return resp;
+    }
+
+    private void enrichWithPaymentInfo(OrderLookupResponse resp, Order order) {
+        String paymentIdStr = order.getPaymentId();
+        if (paymentIdStr == null || paymentIdStr.isBlank()) {
+            return;
+        }
+        try {
+            Long paymentId = Long.parseLong(paymentIdStr.trim());
+            Payment payment = mercadoPagoService.getPayment(paymentId);
+            if (payment == null) {
+                return;
+            }
+            String methodId = payment.getPaymentMethodId();
+            String typeId = payment.getPaymentTypeId();
+            resp.setPaymentMethodId(methodId);
+            resp.setPaymentTypeId(typeId);
+            resp.setPaymentMethodName(toPaymentMethodName(methodId, typeId));
+        } catch (NumberFormatException | MPException | MPApiException e) {
+            // mantém paymentId; método/tipo ficam null
+        }
+    }
+
+    private static String toPaymentMethodName(String paymentMethodId, String paymentTypeId) {
+        if (paymentMethodId == null || paymentMethodId.isBlank()) {
+            return null;
+        }
+        String id = paymentMethodId.trim().toLowerCase();
+        return switch (id) {
+            case "pix" -> "PIX";
+            case "bolbradesco" -> "Boleto";
+            case "visa" -> "Cartão Visa";
+            case "master" -> "Cartão Master";
+            case "amex" -> "Cartão Amex";
+            case "hipercard" -> "Cartão Hipercard";
+            case "elo" -> "Cartão Elo";
+            case "naranja", "cabal", "cencosud", "maestro", "debvisa", "debmaster" -> "Cartão " + id.substring(0, 1).toUpperCase() + id.substring(1);
+            default -> paymentTypeId != null && !paymentTypeId.isBlank()
+                    ? (paymentTypeId.equals("credit_card") || paymentTypeId.equals("debit_card") ? "Cartão" : id)
+                    : id;
+        };
     }
 
     private OrderLookupItemResponse toLookupItemResponse(Map<String, Object> map) {

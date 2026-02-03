@@ -125,6 +125,10 @@ public class OrderController {
             @RequestHeader(value = "x-signature", required = false) String xSignature,
             @RequestHeader(value = "x-request-id", required = false) String xRequestId) {
         String type = payload != null ? payload.getType() : null;
+        // Mercado Pago pode enviar "action" (ex.: payment.updated) em vez de "type"
+        if ((type == null || type.isBlank()) && payload != null && payload.getAction() != null && payload.getAction().startsWith("payment.")) {
+            type = "payment";
+        }
         String paymentIdStr = payload != null && payload.getData() != null ? payload.getData().getId() : null;
         return processWebhook(type, paymentIdStr, xSignature, xRequestId);
     }
@@ -142,6 +146,9 @@ public class OrderController {
     }
 
     private ResponseEntity<Void> processWebhook(String type, String paymentIdStr, String xSignature, String xRequestId) {
+        if (type == null || paymentIdStr == null || paymentIdStr.isBlank()) {
+            return ResponseEntity.badRequest().build();
+        }
         if (webhookSecret != null && !webhookSecret.isBlank()) {
             if (!MercadoPagoWebhookSignatureValidator.validate(webhookSecret, paymentIdStr, xRequestId, xSignature)) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
@@ -150,7 +157,9 @@ public class OrderController {
         try {
             orderService.processMercadoPagoWebhook(type, paymentIdStr);
         } catch (Exception e) {
-            // Responde 200 para o MP não reenviar; em produção use log e métricas.
+            // Responde 200 para o MP não reenviar em loop; log para diagnóstico.
+            org.slf4j.LoggerFactory.getLogger(OrderController.class)
+                    .warn("Webhook Mercado Pago: erro ao processar type={} paymentId={}", type, paymentIdStr, e);
         }
         return ResponseEntity.ok().build();
     }

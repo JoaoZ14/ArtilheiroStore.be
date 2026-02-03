@@ -380,11 +380,14 @@
             <div id="sizes-list"></div>
             <button type="button" class="btn btn-secondary btn-add-size" id="btn-add-size">+ Adicionar tamanho</button>
           </div>
-          <div class="field">
-            <label><input type="checkbox" id="active" name="active" checked /> Ativo</label>
-          </div>
-          <div class="field">
-            <label for="images">Imagens (opcional)</label>
+            <div class="field">
+              <label><input type="checkbox" id="active" name="active" checked /> Ativo</label>
+            </div>
+            <div class="field">
+              <label><input type="checkbox" id="freteGratis" name="freteGratis" /> Frete grátis</label>
+            </div>
+            <div class="field">
+              <label for="images">Imagens (opcional)</label>
             <input type="file" id="images" name="images" accept="image/jpeg,image/png,image/webp" multiple />
           </div>
           <div class="form-actions">
@@ -403,6 +406,14 @@
           <span id="modal-pedido-status-badge" class="badge"></span>
         </div>
         <div id="modal-pedido-content">
+          <div class="detail-block" id="modal-pedido-cliente">
+            <div class="detail-block-title">Cliente</div>
+            <div id="modal-pedido-cliente-content"></div>
+          </div>
+          <div class="detail-block" id="modal-pedido-endereco">
+            <div class="detail-block-title">Endereço de entrega</div>
+            <div id="modal-pedido-endereco-content"></div>
+          </div>
           <div class="detail-block" id="modal-pedido-itens">
             <div class="detail-block-title">Itens do pedido</div>
             <div id="modal-pedido-itens-list"></div>
@@ -590,7 +601,8 @@
           price: p.price,
           promoPrice: p.promoPrice != null ? p.promoPrice : null,
           sizes: p.sizes,
-          active: newActive
+          active: newActive,
+          freteGratis: p.freteGratis === true
         };
         const formData = new FormData();
         formData.append('product', new Blob([JSON.stringify(product)], { type: 'application/json' }), 'product.json');
@@ -754,6 +766,7 @@
       document.getElementById('promoPrice').value = p.promoPrice != null ? p.promoPrice : '';
       renderSizesRows(p.sizes);
       document.getElementById('active').checked = p.active;
+      document.getElementById('freteGratis').checked = p.freteGratis === true;
       document.getElementById('images').value = '';
       renderProductCarousel(p.images);
       document.getElementById('card-form-produto').style.display = 'block';
@@ -766,6 +779,7 @@
       document.getElementById('form-produto').reset();
       document.getElementById('produto-id').value = '';
       document.getElementById('active').checked = true;
+      document.getElementById('freteGratis').checked = false;
       renderSizesRows(null);
       renderProductCarousel([]);
       document.getElementById('card-form-produto').style.display = 'block';
@@ -814,7 +828,8 @@
         price,
         promoPrice: promoPrice,
         sizes,
-        active: document.getElementById('active').checked
+        active: document.getElementById('active').checked,
+        freteGratis: document.getElementById('freteGratis').checked
       };
       btn.disabled = true;
       const btnText = btn.textContent.trim() || 'Salvar';
@@ -930,6 +945,18 @@
       });
     }
 
+    function formatAddress(addr) {
+      if (!addr || typeof addr !== 'object') return '-';
+      const parts = [];
+      if (addr.rua) parts.push(addr.rua);
+      if (addr.numero != null && addr.numero !== '') parts.push(String(addr.numero));
+      if (addr.complemento) parts.push(addr.complemento);
+      if (addr.cep) parts.push('CEP ' + String(addr.cep).replace(/\D/g, '').replace(/^(\d{5})(\d{3})$/, '$1-$2'));
+      if (addr.cidade) parts.push(addr.cidade);
+      if (addr.estado) parts.push(addr.estado);
+      return parts.length ? parts.join(', ') : '-';
+    }
+
     function openModalPedido(o) {
       document.getElementById('modal-pedido-codigo').textContent = o.orderCode;
       const badgeEl = document.getElementById('modal-pedido-status-badge');
@@ -942,6 +969,15 @@
       document.getElementById('pedido-trackingCode').value = o.trackingCode || '';
       document.getElementById('pedido-trackingUrl').value = o.trackingUrl || '';
       document.getElementById('msg-pedido').textContent = '';
+
+      const clienteParts = [];
+      if (o.customerName) clienteParts.push('<p style="margin:0 0 4px"><strong>' + escapeHtml(o.customerName) + '</strong></p>');
+      if (o.email) clienteParts.push('<p style="margin:0 0 4px; font-size:0.9rem">' + escapeHtml(o.email) + '</p>');
+      if (o.cpf) clienteParts.push('<p style="margin:0; font-size:0.9rem; color:var(--text-2)">CPF ' + escapeHtml(String(o.cpf).replace(/\D/g, '').replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, '$1.$2.$3-$4')) + '</p>');
+      document.getElementById('modal-pedido-cliente-content').innerHTML = clienteParts.length ? clienteParts.join('') : '<p class="empty" style="padding:8px 0">Dados não disponíveis.</p>';
+
+      document.getElementById('modal-pedido-endereco-content').textContent = formatAddress(o.address);
+
       const items = o.items || [];
       document.getElementById('modal-pedido-itens-list').innerHTML = items.length ? items.map(it => {
         const img = (it.image || (it.images && it.images[0])) ? `<img class="detail-item-thumb" src="${escapeHtml(it.image || it.images[0])}" alt="" loading="lazy">` : '<div class="detail-item-thumb" style="background:var(--surface-2)" aria-hidden="true"></div>';

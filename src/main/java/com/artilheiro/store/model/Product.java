@@ -49,6 +49,9 @@ public class Product {
     @Column(nullable = false)
     private Boolean active;
 
+    @Column(name = "frete_gratis", nullable = false, columnDefinition = "boolean default false")
+    private Boolean freteGratis = false;
+
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
@@ -133,6 +136,14 @@ public class Product {
 
     public void setActive(Boolean active) {
         this.active = active;
+    }
+
+    public Boolean getFreteGratis() {
+        return freteGratis;
+    }
+
+    public void setFreteGratis(Boolean freteGratis) {
+        this.freteGratis = freteGratis != null ? freteGratis : false;
     }
 
     public LocalDateTime getCreatedAt() {

@@ -116,6 +116,19 @@ public class OrderController {
     }
 
     /**
+     * Lista pedidos pelo CPF do cliente (aceita CPF com ou sem formatação).
+     * Retorna lista vazia se o CPF não tiver 11 dígitos ou não houver pedidos.
+     */
+    @GetMapping("/by-cpf")
+    public ResponseEntity<?> listByCpf(@RequestParam(required = false) String cpf) {
+        if (cpf == null || cpf.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Informe o CPF."));
+        }
+        List<OrderLookupResponse> list = orderService.listByCpf(cpf.trim());
+        return ResponseEntity.ok(list);
+    }
+
+    /**
      * Webhook do Mercado Pago (POST com JSON).
      * Aceita payment.created e payment.updated; atualiza o pedido quando o pagamento for aprovado.
      */

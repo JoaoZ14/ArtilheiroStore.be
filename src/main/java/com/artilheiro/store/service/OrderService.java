@@ -214,6 +214,20 @@ public class OrderService {
     }
 
     /**
+     * Lista pedidos pelo CPF do cliente (apenas dígitos, ordem decrescente por data).
+     */
+    @Transactional(readOnly = true)
+    public List<OrderLookupResponse> listByCpf(String cpf) {
+        String normalized = cpf != null ? cpf.replaceAll("\\D", "") : "";
+        if (normalized.length() != 11) {
+            return List.of();
+        }
+        return orderRepository.findByCpfNormalized(normalized).stream()
+                .map(this::toLookupResponse)
+                .toList();
+    }
+
+    /**
      * Processa notificação webhook do Mercado Pago.
      * Se type == "payment" e status do pagamento == "approved", atualiza o pedido para RECEIVED e grava payment_id.
      */

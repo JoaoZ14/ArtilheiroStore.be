@@ -87,6 +87,7 @@ public class ProductService {
                     product.setPromoPrice(request.getPromoPrice());
                     product.setSizes(request.getSizes());
                     product.setActive(request.getActive() != null ? request.getActive() : true);
+                    product.setFreteGratis(request.getFreteGratis() != null ? request.getFreteGratis() : false);
 
                     if (images != null && !images.isEmpty()) {
                         List<String> imageUrls = new ArrayList<>();
@@ -140,7 +141,8 @@ public class ProductService {
         product.setPromoPrice(request.getPromoPrice());
         product.setImages(imageUrls);
         product.setSizes(request.getSizes());
-        product.setActive(request.getActive());
+        product.setActive(request.getActive() != null ? request.getActive() : true);
+        product.setFreteGratis(request.getFreteGratis() != null ? request.getFreteGratis() : false);
         product.setCreatedAt(LocalDateTime.now());
 
         productRepository.save(product);
@@ -159,6 +161,7 @@ public class ProductService {
         dto.setImages(product.getImages());
         dto.setSizes(product.getSizes());
         dto.setActive(product.getActive());
+        dto.setFreteGratis(product.getFreteGratis() != null ? product.getFreteGratis() : false);
         return dto;
     }
 }

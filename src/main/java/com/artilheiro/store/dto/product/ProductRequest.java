@@ -39,6 +39,9 @@ public class ProductRequest {
 
     private Boolean active = true;
 
+    /** Frete grátis para este produto. */
+    private Boolean freteGratis = false;
+
     public ProductRequest() {
     }
 
@@ -104,5 +107,13 @@ public class ProductRequest {
 
     public void setActive(Boolean active) {
         this.active = active != null ? active : true;
+    }
+
+    public Boolean getFreteGratis() {
+        return freteGratis;
+    }
+
+    public void setFreteGratis(Boolean freteGratis) {
+        this.freteGratis = freteGratis != null ? freteGratis : false;
     }
 }

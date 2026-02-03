@@ -17,6 +17,7 @@ public class ProductResponse {
     private List<String> images;
     private Map<String, Integer> sizes;
     private Boolean active;
+    private Boolean freteGratis;
 
     public ProductResponse() {
     }
@@ -105,5 +106,13 @@ public class ProductResponse {
 
     public void setActive(Boolean active) {
         this.active = active;
+    }
+
+    public Boolean getFreteGratis() {
+        return freteGratis;
+    }
+
+    public void setFreteGratis(Boolean freteGratis) {
+        this.freteGratis = freteGratis;
     }
 }
